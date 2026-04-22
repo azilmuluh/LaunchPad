@@ -1,0 +1,68 @@
+export const INTERESTS = [
+  { id: 'stem', label: 'STEM', icon: '🔬', category: 'Science' },
+  { id: 'medicine', label: 'Medicine & Health', icon: '🏥', category: 'Science' },
+  { id: 'engineering', label: 'Engineering', icon: '⚙️', category: 'Science' },
+  { id: 'technology', label: 'Technology & IT', icon: '💻', category: 'Science' },
+  { id: 'agriculture', label: 'Agriculture', icon: '🌾', category: 'Science' },
+  { id: 'environment', label: 'Environment & Climate', icon: '🌍', category: 'Science' },
+  { id: 'research', label: 'Research & Academia', icon: '📚', category: 'Science' },
+  { id: 'architecture', label: 'Architecture', icon: '🏛️', category: 'Science' },
+  { id: 'business', label: 'Business & Management', icon: '💼', category: 'Business' },
+  { id: 'finance', label: 'Finance & Banking', icon: '💰', category: 'Business' },
+  { id: 'entrepreneurship', label: 'Entrepreneurship', icon: '🚀', category: 'Business' },
+  { id: 'marketing', label: 'Marketing & Sales', icon: '📊', category: 'Business' },
+  { id: 'economics', label: 'Economics', icon: '📈', category: 'Business' },
+  { id: 'accounting', label: 'Accounting', icon: '🧾', category: 'Business' },
+  { id: 'law', label: 'Law & Legal Studies', icon: '⚖️', category: 'Humanities' },
+  { id: 'social_sciences', label: 'Social Sciences', icon: '🤝', category: 'Humanities' },
+  { id: 'psychology', label: 'Psychology', icon: '🧠', category: 'Humanities' },
+  { id: 'political_science', label: 'Political Science', icon: '🏛️', category: 'Humanities' },
+  { id: 'history', label: 'History', icon: '📜', category: 'Humanities' },
+  { id: 'philosophy', label: 'Philosophy', icon: '💭', category: 'Humanities' },
+  { id: 'linguistics', label: 'Linguistics', icon: '🗣️', category: 'Humanities' },
+  { id: 'international_relations', label: 'International Relations', icon: '🌐', category: 'Humanities' },
+  { id: 'education', label: 'Education & Teaching', icon: '🎓', category: 'Education' },
+  { id: 'leadership', label: 'Leadership & Development', icon: '⭐', category: 'Education' },
+  { id: 'public_policy', label: 'Public Policy', icon: '📋', category: 'Education' },
+  { id: 'journalism', label: 'Journalism', icon: '📰', category: 'Media' },
+  { id: 'media', label: 'Media & Communication', icon: '📡', category: 'Media' },
+  { id: 'film', label: 'Film & Photography', icon: '🎬', category: 'Media' },
+  { id: 'digital_media', label: 'Digital Media', icon: '📱', category: 'Media' },
+  { id: 'arts', label: 'Fine Arts', icon: '🎨', category: 'Arts' },
+  { id: 'music', label: 'Music', icon: '🎵', category: 'Arts' },
+  { id: 'literature', label: 'Literature & Writing', icon: '✍️', category: 'Arts' },
+  { id: 'fashion', label: 'Fashion & Design', icon: '👗', category: 'Arts' },
+  { id: 'performing_arts', label: 'Performing Arts', icon: '🎭', category: 'Arts' },
+  { id: 'graphic_design', label: 'Graphic Design', icon: '🖌️', category: 'Arts' },
+  { id: 'sports', label: 'Sports & Athletics', icon: '⚽', category: 'Sports' },
+  { id: 'public_health', label: 'Public Health', icon: '💊', category: 'Health' },
+  { id: 'nutrition', label: 'Nutrition & Food Science', icon: '🥗', category: 'Health' },
+  { id: 'pharmacy', label: 'Pharmacy', icon: '🧪', category: 'Health' },
+  { id: 'data_science', label: 'Data Science & AI', icon: '🤖', category: 'Tech' },
+  { id: 'cybersecurity', label: 'Cybersecurity', icon: '🔒', category: 'Tech' },
+  { id: 'software_dev', label: 'Software Development', icon: '👨‍💻', category: 'Tech' },
+  { id: 'renewable_energy', label: 'Renewable Energy', icon: '☀️', category: 'Science' },
+  { id: 'marine_science', label: 'Marine Science', icon: '🌊', category: 'Science' },
+  { id: 'veterinary', label: 'Veterinary Science', icon: '🐾', category: 'Science' },
+  { id: 'urban_planning', label: 'Urban Planning', icon: '🏙️', category: 'Science' },
+  { id: 'social_work', label: 'Social Work', icon: '❤️', category: 'Humanities' },
+  { id: 'human_rights', label: 'Human Rights', icon: '✊', category: 'Humanities' },
+  { id: 'gender_studies', label: 'Gender Studies', icon: '♀️', category: 'Humanities' },
+  { id: 'tourism', label: 'Tourism & Hospitality', icon: '✈️', category: 'Business' },
+  { id: 'logistics', label: 'Logistics & Supply Chain', icon: '🚢', category: 'Business' },
+  { id: 'real_estate', label: 'Real Estate', icon: '🏠', category: 'Business' },
+  { id: 'gaming', label: 'Gaming & Esports', icon: '🎮', category: 'Tech' },
+  { id: 'biotech', label: 'Biotechnology', icon: '🧬', category: 'Science' },
+  { id: 'space_science', label: 'Space Science', icon: '🚀', category: 'Science' },
+  { id: 'mining', label: 'Mining & Geology', icon: '⛏️', category: 'Science' },
+];
+
+export const INTEREST_CATEGORIES = [...new Set(INTERESTS.map(i => i.category))];
+
+export function getInterestsByCategory(category) {
+  return INTERESTS.filter(i => i.category === category);
+}
+
+export function getInterestById(id) {
+  return INTERESTS.find(i => i.id === id);
+}

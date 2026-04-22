@@ -1,0 +1,16 @@
+{
+  "name": "LaunchPad",
+  "short_name": "LaunchPad",
+  "description": "Discover scholarships, internships, competitions and jobs. Built for Cameroonian youth.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F5F0E8",
+  "theme_color": "#FF5C00",
+  "orientation": "portrait-primary",
+  "icons": [
+    { "src": "/logo.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ],
+  "categories": ["education", "productivity", "social"],
+  "lang": "en",
+  "dir": "ltr"
+}
