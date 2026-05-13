@@ -1,8 +1,9 @@
 import supabase from './_supabase.js';
 import jwt from 'jsonwebtoken';
 import OpenAI from 'openai';
+import nodemailer from 'nodemailer';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'launchpad-secret-key-2026';
+const JWT_SECRET = process.env.JWT_SECRET;
 const NVIDIA_KEY = process.env.NVIDIA_API_KEY || '';
 
 const openai = new OpenAI({
@@ -26,14 +27,23 @@ export const BADGE_DEFS = {
   circle_joiner:    { label: 'Team Player',        icon: '\uD83E\uDD1D', xp: 20,  desc: 'Joined your first Circle',                   threshold: 1  },
   profile_complete: { label: 'Identity',           icon: '\uD83C\uDF9F', xp: 30,  desc: 'Completed your full profile',                threshold: 1  },
   cv_uploaded:      { label: 'Resume Ready',       icon: '\uD83D\uDCC4', xp: 25,  desc: 'Uploaded your CV',                           threshold: 1  },
+  expert:           { label: 'Expert',             icon: '💎',           xp: 500, desc: 'Reached Level 10',                          threshold: 10 },
 };
 
 async function sendBadgeEmail(email, name, badge, allBadges) {
-  const RESEND_KEY = process.env.RESEND_API_KEY;
-  if (!RESEND_KEY) {
-    console.log(`[DEV] Badge email to ${email}: earned ${badge.label}`);
+  const GMAIL_USER = process.env.GMAIL_USER;
+  const GMAIL_PASS = process.env.GMAIL_PASS;
+
+  if (!GMAIL_USER || !GMAIL_PASS) {
+    console.log(`[DEV] Badge email to ${email}: earned ${badge.label} (GMAIL_USER or GMAIL_PASS missing)`);
     return;
   }
+
+  const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: { user: GMAIL_USER, pass: GMAIL_PASS }
+  });
+
   // Build "what to do next" suggestions
   const earned = new Set(allBadges.map(b => b.badge_key));
   const suggestions = Object.entries(BADGE_DEFS)
@@ -42,41 +52,44 @@ async function sendBadgeEmail(email, name, badge, allBadges) {
     .map(([, def]) => `<li style="margin:6px 0"><strong>${def.icon} ${def.label}</strong> &mdash; ${def.desc} <em>(+${def.xp} XP)</em></li>`)
     .join('');
 
-  await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: { 'Authorization': `Bearer ${RESEND_KEY}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      from: 'LaunchPad <noreply@launchpad.vercel.app>',
-      to: email,
-      subject: `${badge.icon} You earned the "${badge.label}" badge!`,
-      html: `
-        <div style="font-family:sans-serif;max-width:520px;margin:auto;padding:32px;background:#F5F0E8;border:3px solid #0A0A0A;border-radius:12px">
-          <h1 style="font-size:24px;font-weight:900;margin:0 0 4px">LaunchPad \uD83D\uDE80</h1>
-          <p style="color:#666;margin:0 0 24px;font-size:14px">Hi ${name}, you just earned a new badge!</p>
-          <div style="background:#0B1E3D;border:3px solid #0A0A0A;border-radius:10px;padding:24px;text-align:center;box-shadow:4px 4px 0 #FF5C00;margin-bottom:24px">
-            <div style="font-size:52px;margin-bottom:8px">${badge.icon}</div>
-            <h2 style="color:#FFD600;font-size:22px;font-weight:900;margin:0 0 4px">${badge.label}</h2>
-            <p style="color:#aaa;font-size:13px;margin:0 0 12px">${badge.desc}</p>
-            <div style="display:inline-block;background:#FF5C00;color:#fff;font-weight:900;padding:6px 18px;border-radius:20px;border:2px solid #FFD600">+${badge.xp} XP</div>
-          </div>
-          <h3 style="font-size:16px;font-weight:900;margin:0 0 12px">Keep going! Earn these next:</h3>
-          <ul style="padding-left:20px;color:#333;font-size:14px">${suggestions}</ul>
-          <p style="margin-top:24px;font-size:12px;color:#999">Keep building your future with LaunchPad.</p>
-        </div>`,
-    }),
-  }).catch(e => console.error('Badge email error:', e.message));
+  const mailOptions = {
+    from: `"LaunchPad" <${GMAIL_USER}>`,
+    to: email,
+    subject: `${badge.icon} You earned the "${badge.label}" badge!`,
+    html: `
+      <div style="font-family:sans-serif;max-width:520px;margin:auto;padding:32px;background:#F5F0E8;border:3px solid #0A0A0A;border-radius:12px">
+        <h1 style="font-size:24px;font-weight:900;margin:0 0 4px">LaunchPad 🚀</h1>
+        <p style="color:#666;margin:0 0 24px;font-size:14px">Hi ${name}, you just earned a new badge!</p>
+        <div style="background:#0B1E3D;border:3px solid #0A0A0A;border-radius:10px;padding:24px;text-align:center;box-shadow:4px 4px 0 #FF5C00;margin-bottom:24px">
+          <div style="font-size:52px;margin-bottom:8px">${badge.icon}</div>
+          <h2 style="color:#FFD600;font-size:22px;font-weight:900;margin:0 0 4px">${badge.label}</h2>
+          <p style="color:#aaa;font-size:13px;margin:0 0 12px">${badge.desc}</p>
+          <div style="display:inline-block;background:#FF5C00;color:#fff;font-weight:900;padding:6px 18px;border-radius:20px;border:2px solid #FFD600">+${badge.xp} XP</div>
+        </div>
+        <h3 style="font-size:16px;font-weight:900;margin:0 0 12px">Keep going! Earn these next:</h3>
+        <ul style="padding-left:20px;color:#333;font-size:14px">${suggestions}</ul>
+        <p style="margin-top:24px;font-size:12px;color:#999">Keep building your future with LaunchPad.</p>
+      </div>`
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+  } catch (e) {
+    console.error('Badge email error:', e.message);
+  }
 }
 
 export async function checkAndAwardBadges(userId, userEmail, userName) {
   // Get current stats
-  const [streakRow, postsRow, oppsRow, commentsRow, bookmarksRow, circlesCreated, circlesJoined, extraRow] = await Promise.all([
+  const [streakRow, postsRow, oppsRow, commentsRow, engageCommentsRow, bookmarksRow, circlesCreated, circlesJoined, extraRow] = await Promise.all([
     supabase.from('lp_streaks').select('current_streak, longest_streak').eq('user_id', userId).single(),
     supabase.from('lp_posts').select('id', { count: 'exact', head: true }).eq('user_id', userId),
     supabase.from('lp_verified_opps').select('id', { count: 'exact', head: true }).eq('user_id', userId),
     supabase.from('lp_comments').select('id', { count: 'exact', head: true }).eq('user_id', userId),
+    supabase.from('lp_engagement_comments').select('id', { count: 'exact', head: true }).eq('user_id', userId),
     supabase.from('lp_bookmarks').select('id', { count: 'exact', head: true }).eq('user_id', userId),
-    supabase.from('lp_circles').select('id', { count: 'exact', head: true }).eq('creator_id', userId),
-    supabase.from('lp_circle_members').select('id', { count: 'exact', head: true }).eq('user_id', userId),
+    supabase.from('lp_circles_v2').select('id', { count: 'exact', head: true }).eq('creator_id', userId),
+    supabase.from('lp_circle_members_v2').select('id', { count: 'exact', head: true }).eq('user_id', userId),
     supabase.from('lp_user_extra').select('cv_text').eq('user_id', userId).single(),
   ]);
   const [userRow] = await Promise.all([
@@ -86,7 +99,7 @@ export async function checkAndAwardBadges(userId, userEmail, userName) {
   const streak   = streakRow.data?.current_streak || 0;
   const posts    = postsRow.count || 0;
   const opps     = oppsRow.count || 0;
-  const comments = commentsRow.count || 0;
+  const comments = (commentsRow.count || 0) + (engageCommentsRow.count || 0);
   const bookmarks = bookmarksRow.count || 0;
   const circlesMade = circlesCreated.count || 0;
   const circlesIn   = circlesJoined.count || 0;
@@ -110,6 +123,7 @@ export async function checkAndAwardBadges(userId, userEmail, userName) {
     { key: 'circle_joiner',    met: circlesIn >= 1 },
     { key: 'profile_complete', met: profileComplete },
     { key: 'cv_uploaded',      met: hasCv },
+    { key: 'expert',           met: (streakRow.data?.level || 1) >= 10 },
   ];
 
   // Get already earned badges

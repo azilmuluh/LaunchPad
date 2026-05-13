@@ -4,6 +4,8 @@ import { apiRequest } from '../lib/auth';
 import OpportunityCard from '../components/OpportunityCard';
 import { Search, RefreshCw, Sparkles, Plus, Globe, Users, AlertCircle, Filter } from 'lucide-react';
 import { INTERESTS } from '../lib/interests';
+import SEO from '../components/SEO';
+import { useI18n } from '../lib/i18n';
 
 const CATS = [
   { id: 'all',         label: 'All',          emoji: '✨' },
@@ -18,6 +20,7 @@ const CATS = [
 type Tab = 'discover' | 'community';
 
 export default function FeedPage({ user }: any) {
+  const { t, lang } = useI18n();
   const navigate = useNavigate();
   const [tab, setTab] = useState<Tab>('discover');
 
@@ -84,6 +87,18 @@ export default function FeedPage({ user }: any) {
     else                    fetchCommunity(1, cat, true);
   }, [cat, tab]);
 
+  /* ── handle deep link share ── */
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const sharedId = params.get('id');
+    if (sharedId && !discoverLoading && !communityLoading) {
+      setTimeout(() => {
+        const el = document.getElementById(`opp-${sharedId}`);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 500);
+    }
+  }, [discoverLoading, communityLoading, tab]);
+
   /* ── infinite scroll ── */
   useEffect(() => {
     const el = dLoaderRef.current; if (!el) return;
@@ -131,38 +146,50 @@ export default function FeedPage({ user }: any) {
   const isMore   = tab === 'discover' ? discoverLoadMore : communityLoadMore;
   const hasMore  = tab === 'discover' ? discoverHasMore  : communityHasMore;
 
-  const filtered = search.trim()
-    ? raw.filter(i =>
-        (i.title || '').toLowerCase().includes(search.toLowerCase()) ||
-        (i.description || i.snippet || '').toLowerCase().includes(search.toLowerCase())
-      )
-    : raw;
+  const oppCategories = JSON.parse(user.opportunity_categories || '[]');
+
+  const filtered = raw.filter(i => {
+    if (search.trim()) {
+      const match = (i.title || '').toLowerCase().includes(search.toLowerCase()) ||
+                    (i.description || i.snippet || '').toLowerCase().includes(search.toLowerCase());
+      if (!match) return false;
+    }
+    if (cat === 'all' && oppCategories.length > 0) {
+      const itemCat = i.category || i.type;
+      if (itemCat && !oppCategories.includes(itemCat)) return false;
+    }
+    return true;
+  });
 
   const interestLabels = interests.slice(0, 4).map((id: string) => {
-    const int = INTERESTS.find((i: any) => i.id === id);
-    return int ? int.label : id;
+    return t(id as any);
   });
 
   return (
-    <div className="min-h-screen" style={{ background: '#080F1E' }}>
+    <div className="min-h-screen" style={{ background: 'var(--bg)' }}>
+      <SEO 
+        title="Dashboard" 
+        description="Your personalized feed of scholarships, internships, and opportunities."
+        canonical="/feed"
+      />
 
       {/* ── Hero header ── */}
-      <div className="px-4 pt-8 pb-0" style={{ background: 'linear-gradient(180deg, #0B1628 0%, #080F1E 100%)' }}>
+      <div className="px-4 pt-8 pb-0" style={{ background: 'var(--bg)', borderBottom: '1px solid var(--border)' }}>
         <div className="max-w-5xl mx-auto">
 
           {/* Greeting */}
           <div className="flex items-start justify-between mb-5">
             <div>
-              <h1 className="text-white text-2xl font-bold">Dashboard</h1>
-              <p className="text-slate-500 text-sm mt-0.5">
-                Welcome back, <span style={{ color: '#F97316' }}>{user.full_name?.split(' ')[0]}</span> 👋
+              <h1 className="text-2xl font-bold">{t('dashboard')}</h1>
+              <p className="text-sm mt-0.5" style={{ color: 'var(--muted)' }}>
+                {t('welcome_back')}, <span style={{ color: '#FF5C00' }}>{user.full_name?.split(' ')[0]}</span> 👋
               </p>
             </div>
             <div className="flex items-center gap-2">
               <button onClick={() => navigate('/post')}
                 className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold transition-all hover:opacity-90 active:scale-95"
                 style={{ background: 'linear-gradient(135deg, #F97316, #c2410c)', color: 'white' }}>
-                <Plus size={14} /> Post
+                <Plus size={14} /> {t('post')}
               </button>
               <button onClick={handleRefresh} disabled={refreshing}
                 className="w-9 h-9 flex items-center justify-center rounded-xl transition-all hover:opacity-80"
@@ -176,7 +203,7 @@ export default function FeedPage({ user }: any) {
           {interestLabels.length > 0 && tab === 'discover' && (
             <div className="flex items-center gap-2 mb-4 flex-wrap">
               <Sparkles size={11} style={{ color: '#F97316' }} />
-              <span className="text-slate-600 text-xs">Personalised for:</span>
+              <span className="text-slate-600 text-xs">{t('personalised_for')}</span>
               {interestLabels.map((l: string) => (
                 <span key={l} className="px-2 py-0.5 rounded-full text-xs"
                   style={{ background: 'rgba(249,115,22,0.08)', color: '#fb923c', border: '1px solid rgba(249,115,22,0.15)' }}>
@@ -188,29 +215,29 @@ export default function FeedPage({ user }: any) {
 
           {/* Search */}
           <div className="relative mb-4">
-            <Search size={14} className="absolute left-4 top-1/2 -translate-y-1/2" style={{ color: '#334155' }} />
+            <Search size={14} className="absolute left-4 top-1/2 -translate-y-1/2" style={{ color: 'var(--muted)' }} />
             <input
               type="text" value={search} onChange={e => setSearch(e.target.value)}
-              placeholder="Search opportunities…"
-              className="w-full pl-10 pr-4 py-3 rounded-xl text-white outline-none text-sm"
-              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', caretColor: '#F97316' }}
+              placeholder={t('search_opps')}
+              className="w-full pl-10 pr-4 py-3 rounded-xl outline-none text-sm nb-input"
+              style={{ caretColor: '#FF5C00' }}
             />
           </div>
 
           {/* Tabs */}
           <div className="flex gap-1 p-1 rounded-xl mb-4"
-            style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+            style={{ background: 'var(--surface)', border: '2.5px solid var(--border)' }}>
             {([
-              { id: 'discover',  label: 'Discover',         icon: <Globe  size={12} /> },
-              { id: 'community', label: 'Community Posted', icon: <Users  size={12} /> },
-            ] as const).map(t => (
-              <button key={t.id} onClick={() => setTab(t.id)}
+              { id: 'discover',  label: t('discover'),         icon: <Globe  size={12} /> },
+              { id: 'community', label: t('community_posted'), icon: <Users  size={12} /> },
+            ] as const).map(t_tab => (
+              <button key={t_tab.id} onClick={() => setTab(t_tab.id)}
                 className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-semibold transition-all"
-                style={tab === t.id
-                  ? { background: 'rgba(249,115,22,0.15)', color: '#F97316', border: '1px solid rgba(249,115,22,0.25)' }
-                  : { color: '#334155' }
+                style={tab === t_tab.id
+                  ? { background: '#FF5C00', color: '#fff', border: '2px solid var(--border)' }
+                  : { color: 'var(--muted)' }
                 }>
-                {t.icon} {t.label}
+                {t_tab.icon} {t_tab.label}
               </button>
             ))}
           </div>
@@ -219,14 +246,12 @@ export default function FeedPage({ user }: any) {
           <div className="flex gap-2 overflow-x-auto pb-4" style={{ scrollbarWidth: 'none' }}>
             {CATS.map(c => (
               <button key={c.id} onClick={() => setCat(c.id)}
-                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all"
-                style={{
-                  background: cat === c.id ? '#F97316'                  : 'rgba(255,255,255,0.04)',
-                  color:      cat === c.id ? 'white'                    : '#334155',
-                  border:     cat === c.id ? 'none'                     : '1px solid rgba(255,255,255,0.06)',
-                  boxShadow:  cat === c.id ? '0 4px 14px rgba(249,115,22,0.3)' : 'none',
-                }}>
-                {c.emoji} {c.label}
+                className="nb-btn px-4 py-1.5 text-xs whitespace-nowrap"
+                style={cat === c.id 
+                  ? { background: '#FF5C00', color: '#fff' }
+                  : { background: 'var(--surface)', color: 'var(--ink)' }
+                }>
+                {c.emoji} {t(c.id as any)}
               </button>
             ))}
           </div>
@@ -244,7 +269,7 @@ export default function FeedPage({ user }: any) {
             <span className="text-sm flex-1" style={{ color: '#fca5a5' }}>{discoverError}</span>
             <button onClick={() => fetchDiscover(1, cat, true)}
               className="text-xs font-bold px-3 py-1 rounded-lg"
-              style={{ background: 'rgba(239,68,68,0.15)', color: '#fca5a5' }}>Retry</button>
+              style={{ background: 'rgba(239,68,68,0.15)', color: '#fca5a5' }}>{t('retry')}</button>
           </div>
         )}
 
@@ -276,18 +301,18 @@ export default function FeedPage({ user }: any) {
           <div className="flex flex-col items-center justify-center py-24 text-center">
             <div className="text-5xl mb-4">{tab === 'community' ? '📢' : '🔍'}</div>
             <h3 className="text-white text-xl font-bold mb-2">
-              {tab === 'community' ? 'No community posts yet' : 'No opportunities found'}
+              {tab === 'community' ? t('no_comm_posts') : t('no_opps_found')}
             </h3>
             <p className="text-sm mb-5" style={{ color: '#334155' }}>
               {tab === 'community'
-                ? 'Be the first to share a life-changing opportunity!'
-                : 'Try a different category, or check back after a refresh.'}
+                ? t('be_first_share')
+                : t('try_different')}
             </p>
             {tab === 'community' && (
               <button onClick={() => navigate('/post')}
                 className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white"
                 style={{ background: 'linear-gradient(135deg, #F97316, #c2410c)' }}>
-                <Plus size={14} /> Post First Opportunity
+                <Plus size={14} /> {t('post_first')}
               </button>
             )}
           </div>
@@ -295,19 +320,20 @@ export default function FeedPage({ user }: any) {
         ) : (
           <>
             <p className="text-xs mb-4" style={{ color: '#1e293b' }}>
-              {filtered.length} opportunity{filtered.length !== 1 ? 'ies' : 'y'}
-              {search && ` matching "${search}"`}
+              {t('opportunities_count', { n: filtered.length, s: lang === 'en' ? (filtered.length === 1 ? 'y' : 'ies') : (filtered.length > 1 ? 's' : '') })}
+              {search && ` ${t('matching')} "${search}"`}
             </p>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
               {filtered.map((item: any, idx: number) => (
-                <OpportunityCard
-                  key={`${item.link || item.id}-${idx}`}
-                  item={item}
-                  user={user}
-                  isBookmarked={bookmarks.has(item.link)}
-                  onBookmark={() => handleBookmark(item)}
-                />
+                <div key={`${item.link || item.id}-${idx}`} className="anim-up" style={{ animationDelay: `${idx * 0.05}s` }}>
+                  <OpportunityCard
+                    item={item}
+                    user={user}
+                    isBookmarked={bookmarks.has(item.link)}
+                    onBookmark={() => handleBookmark(item)}
+                  />
+                </div>
               ))}
             </div>
 
@@ -316,11 +342,11 @@ export default function FeedPage({ user }: any) {
               {isMore && (
                 <div className="flex items-center gap-3 text-sm" style={{ color: '#1e293b' }}>
                   <div className="w-4 h-4 rounded-full border-2 border-orange-500 border-t-transparent animate-spin" />
-                  Loading more…
+                  {t('loading_more')}
                 </div>
               )}
               {!hasMore && filtered.length > 0 && (
-                <p className="text-xs" style={{ color: '#1e293b' }}>All opportunities loaded ✓</p>
+                <p className="text-xs" style={{ color: '#1e293b' }}>{t('all_loaded')}</p>
               )}
             </div>
           </>

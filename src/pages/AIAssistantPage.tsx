@@ -1,28 +1,28 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { apiRequest } from '../lib/auth';
 import { useLocation } from 'react-router-dom';
-import {
-  Send, Bot, Trash2, RefreshCw, Paperclip, Smile,
+import { Send, Bot, Trash2, RefreshCw, Paperclip, Smile,
   Target, X, Image, FileText, Mic, ChevronDown
 } from 'lucide-react';
+import SEO from '../components/SEO';
+import { useI18n } from '../lib/i18n';
 
 // ── Emoji picker (inline, no external lib) ────────────────────────────────────
-const EMOJI_GROUPS = [
-  { label: 'Smileys', emojis: ['😀','😂','😊','🥰','😎','🤔','😅','🙏','🔥','💪','👏','✅','⭐','🎉','🚀','💡','📚','🎓','💼','🏆'] },
-  { label: 'Hands',   emojis: ['👍','👎','👋','🤝','✌️','🤞','💯','👌','🫡','🙌','🫶','💪','🤜','🤛','👊','✊','🫵','👆','👇','👉'] },
-  { label: 'Objects', emojis: ['📝','📄','📊','📈','💻','📱','🎯','🗓️','⏰','🔑','💰','🌍','🏫','🏥','✈️','🎪','🎭','🎨','🎵','🎮'] },
-];
-
-function EmojiPicker({ onSelect, onClose }: { onSelect: (e: string) => void; onClose: () => void }) {
+function EmojiPicker({ onSelect, onClose, t }: { onSelect: (e: string) => void; onClose: () => void; t: any }) {
   const [tab, setTab] = useState(0);
+  const EMOJI_GROUPS = [
+    { label: t('smileys'), emojis: ['😀','😂','😊','🥰','😎','🤔','😅','🙏','🔥','💪','👏','✅','⭐','🎉','🚀','💡','📚','🎓','💼','🏆'] },
+    { label: t('hands'),   emojis: ['👍','👎','👋','🤝','✌️','🤞','💯','👌','🫡','🙌','🫶','💪','🤜','🤛','👊','✊','🫵','👆','👇','👉'] },
+    { label: t('objects'), emojis: ['📝','📄','📊','📈','💻','📱','🎯','🗓️','⏰','🔑','💰','🌍','🏫','🏥','✈️','🎪','🎭','🎨','🎵','🎮'] },
+  ];
   return (
-    <div className="absolute bottom-full mb-2 left-0 z-50 nb-card p-3 w-72" style={{ background: '#fff' }}>
+    <div className="absolute bottom-full mb-2 left-0 z-50 nb-card p-3 w-72" style={{ background: 'var(--surface)' }}>
       <div className="flex items-center justify-between mb-2">
         <div className="flex gap-1">
           {EMOJI_GROUPS.map((g, i) => (
             <button key={i} onClick={() => setTab(i)}
               className="px-2 py-1 rounded text-xs font-bold transition-all"
-              style={tab === i ? { background: '#FF5C00', color: '#fff' } : { color: '#666' }}>
+              style={tab === i ? { background: '#FF5C00', color: '#fff' } : { color: 'var(--muted)' }}>
               {g.label}
             </button>
           ))}
@@ -59,9 +59,10 @@ type Msg = {
 };
 
 export default function AIAssistantPage({ user }: any) {
+  const { t } = useI18n();
   const [messages, setMessages] = useState<Msg[]>([{
     role: 'assistant',
-    content: `Hey ${user.full_name?.split(' ')[0]}! 👋 I'm your LaunchPad AI — your personal opportunity advisor.\n\nI can help you:\n- **Find scholarships, internships & competitions** tailored to your profile\n- **Break down your goals** into actionable steps\n- **Review essays, CVs, and applications**\n- **Prepare for interviews** and competitions\n\nWhat would you like to work on today?`,
+    content: `${t('ai_intro').replace('{name}', user.full_name?.split(' ')[0])}\n\n${t('ai_can_help')}\n- **${t('ai_help_find')}**\n- **${t('ai_help_goals')}**\n- **${t('ai_help_review')}**\n- **${t('ai_help_prepare')}**\n\n${t('ai_ask_work')}`,
   }]);
   const [input,      setInput]      = useState('');
   const [streaming,  setStreaming]  = useState(false);
@@ -159,7 +160,7 @@ export default function AIAssistantPage({ user }: any) {
       }
       setMessages(prev => { const u = [...prev]; u[u.length - 1] = { role: 'assistant', content: acc, streaming: false }; return u; });
     } catch (err: any) {
-      setMessages(prev => { const u = [...prev]; u[u.length - 1] = { role: 'assistant', content: `Sorry, I ran into an error: ${err.message}. Please try again.`, streaming: false }; return u; });
+      setMessages(prev => { const u = [...prev]; u[u.length - 1] = { role: 'assistant', content: t('ai_error_sorry').replace('{error}', err.message), streaming: false }; return u; });
     } finally {
       setStreaming(false);
     }
@@ -167,31 +168,29 @@ export default function AIAssistantPage({ user }: any) {
 
   const clearChat = () => setMessages([{
     role: 'assistant',
-    content: `Hey ${user.full_name?.split(' ')[0]}! What can I help you with?`,
+    content: `${t('ai_intro').replace('{name}', user.full_name?.split(' ')[0])} ${t('ai_ask_work')}`,
   }]);
 
-  const QUICK = [
-    'Help me find a fully funded scholarship for 2026',
-    'Review my CV and suggest improvements',
-    'Break down my goal into action steps',
-    'How do I prepare for IYMC 2026?',
-    'What competitions suit my profile?',
-    'Help me write a scholarship essay',
-  ];
+  const QUICK = t('quick_prompts');
 
   const initials = user.full_name?.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase();
 
   return (
-    <div className="flex flex-col" style={{ height: 'calc(100dvh - 56px)', background: '#F5F0E8' }}>
+    <div className="flex flex-col" style={{ height: 'calc(100dvh - 56px)', background: 'var(--bg)' }}>
+      <SEO 
+        title={t('ai_title')} 
+        description={t('ai_desc')}
+        noindex={true}
+      />
 
       {/* ── Header ── */}
       <div className="flex-shrink-0 px-4 py-3 flex items-center justify-between"
-        style={{ background: '#0B1E3D', borderBottom: '2.5px solid #0A0A0A' }}>
+        style={{ background: 'var(--surface)', borderBottom: '2.5px solid #0A0A0A' }}>
         <div className="flex items-center gap-2.5">
           <div className="w-9 h-9 rounded-xl flex items-center justify-center relative"
             style={{ background: '#FF5C00', border: '2px solid #FFD600' }}>
             <Bot size={16} className="text-white" />
-            <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full" style={{ background: '#00C853', border: '1.5px solid #0B1E3D' }} />
+            <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full" style={{ background: '#00C853', border: '1.5px solid var(--surface)' }} />
           </div>
           <div>
             <p className="text-white font-black text-sm leading-none">LaunchPad AI</p>
@@ -199,30 +198,30 @@ export default function AIAssistantPage({ user }: any) {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {goals.length > 0 && (
-            <button onClick={() => setShowGoals(g => !g)}
-              className="nb-btn px-2.5 py-1.5 text-xs flex items-center gap-1.5"
-              style={{ background: 'rgba(255,214,0,0.15)', color: '#FFD600', borderColor: 'rgba(255,214,0,0.4)' }}>
-              <Target size={11} /> {goals.length} Goal{goals.length !== 1 ? 's' : ''}
+            {goals.length > 0 && (
+              <button onClick={() => setShowGoals(g => !g)}
+                className="nb-btn px-2.5 py-1.5 text-xs flex items-center gap-1.5"
+                style={{ background: 'rgba(255,214,0,0.15)', color: '#FFD600', borderColor: 'rgba(255,214,0,0.4)' }}>
+                <Target size={11} /> {goals.length} {t('goals')}
+              </button>
+            )}
+            <button onClick={clearChat}
+              className="nb-btn px-2.5 py-1.5 text-xs flex items-center gap-1"
+              style={{ background: 'rgba(255,255,255,0.1)', color: 'var(--ink)', borderColor: 'rgba(255,255,255,0.2)' }}>
+              <Trash2 size={11} /> {t('clear')}
             </button>
-          )}
-          <button onClick={clearChat}
-            className="nb-btn px-2.5 py-1.5 text-xs flex items-center gap-1"
-            style={{ background: 'rgba(255,255,255,0.1)', color: '#fff', borderColor: 'rgba(255,255,255,0.2)' }}>
-            <Trash2 size={11} /> Clear
-          </button>
         </div>
       </div>
 
       {/* Goals panel */}
       {showGoals && goals.length > 0 && (
         <div className="flex-shrink-0 px-4 py-3" style={{ background: '#FFFBEB', borderBottom: '2px solid #FFD600' }}>
-          <p className="text-xs font-black uppercase tracking-widest mb-2" style={{ color: '#92400E' }}>Your Active Goals</p>
+          <p className="text-xs font-black uppercase tracking-widest mb-2" style={{ color: '#92400E' }}>{t('active_goals')}</p>
           <div className="flex flex-wrap gap-2">
             {goals.filter(g => g.status === 'active').map(g => (
-              <button key={g.id} onClick={() => { sendMessage(`Tell me the next steps I should take toward my goal: "${g.title}"`); setShowGoals(false); }}
+              <button key={g.id} onClick={() => { sendMessage(t('next_steps_goal').replace('{title}', g.title)); setShowGoals(false); }}
                 className="nb-btn px-3 py-1.5 text-xs flex items-center gap-1.5"
-                style={{ background: '#fff', color: '#0A0A0A' }}>
+                style={{ background: 'var(--surface)', color: 'var(--ink)' }}>
                 <Target size={10} style={{ color: '#FF5C00' }} /> {g.title}
               </button>
             ))}
@@ -238,7 +237,7 @@ export default function AIAssistantPage({ user }: any) {
             <div className="w-8 h-8 rounded-xl flex-shrink-0 flex items-center justify-center font-black text-white text-xs"
               style={msg.role === 'user'
                 ? { background: '#FF5C00', border: '2px solid #0A0A0A' }
-                : { background: '#0B1E3D', border: '2px solid #0A0A0A' }
+                : { background: 'var(--surface)', border: '2px solid #0A0A0A' }
               }>
               {msg.role === 'user' ? (user.avatar_url ? <img src={user.avatar_url} className="w-full h-full object-cover rounded-xl" /> : initials) : <Bot size={13} />}
             </div>
@@ -261,7 +260,7 @@ export default function AIAssistantPage({ user }: any) {
                 className="rounded-2xl px-4 py-3 text-sm leading-relaxed font-medium"
                 style={msg.role === 'user'
                   ? { background: '#FF5C00', color: '#fff', borderBottomRightRadius: '4px', border: '2px solid #0A0A0A', boxShadow: '2px 2px 0 #0A0A0A' }
-                  : { background: '#fff', color: '#0A0A0A', borderBottomLeftRadius: '4px', border: '2px solid #0A0A0A', boxShadow: '2px 2px 0 #0A0A0A' }
+                  : { background: 'var(--surface)', color: 'var(--ink)', borderBottomLeftRadius: '4px', border: '2px solid #0A0A0A', boxShadow: '2px 2px 0 #0A0A0A' }
                 }>
                 {msg.role === 'assistant'
                   ? <div dangerouslySetInnerHTML={{ __html: formatMsg(msg.content) }} />
@@ -280,12 +279,12 @@ export default function AIAssistantPage({ user }: any) {
         {/* Quick prompts */}
         {messages.length <= 1 && (
           <div className="pt-2">
-            <p className="text-xs font-black uppercase tracking-widest mb-2" style={{ color: '#aaa' }}>Quick Start</p>
+            <p className="text-xs font-black uppercase tracking-widest mb-2" style={{ color: 'var(--muted)' }}>{t('quick_start')}</p>
             <div className="flex flex-col gap-1.5">
               {QUICK.map(p => (
                 <button key={p} onClick={() => sendMessage(p)}
                   className="nb-btn text-left px-3 py-2 text-xs w-full"
-                  style={{ background: '#fff', color: '#0A0A0A' }}>
+                  style={{ background: 'var(--surface)', color: 'var(--ink)' }}>
                   {p}
                 </button>
               ))}
@@ -296,7 +295,7 @@ export default function AIAssistantPage({ user }: any) {
       </div>
 
       {/* ── Input area ── */}
-      <div className="flex-shrink-0" style={{ background: '#F5F0E8', borderTop: '2.5px solid #0A0A0A', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+      <div className="flex-shrink-0" style={{ background: 'var(--bg)', borderTop: '2.5px solid #0A0A0A', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
         {/* Attachment preview */}
         {attachment && (
           <div className="px-4 pt-3 flex items-center gap-2">
@@ -314,6 +313,7 @@ export default function AIAssistantPage({ user }: any) {
         <div className="px-4 py-3 relative">
           {showEmoji && (
             <EmojiPicker
+              t={t}
               onSelect={e => { setInput(p => p + e); inputRef.current?.focus(); }}
               onClose={() => setShowEmoji(false)}
             />
@@ -344,7 +344,7 @@ export default function AIAssistantPage({ user }: any) {
               onKeyDown={e => {
                 if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
               }}
-              placeholder="Ask anything... (Shift+Enter for new line)"
+              placeholder={t('ask_anything')}
               disabled={streaming}
               rows={1}
               className="nb-input flex-1 text-sm resize-none disabled:opacity-50"

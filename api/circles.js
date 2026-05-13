@@ -1,7 +1,8 @@
 import supabase from './_supabase.js';
 import jwt from 'jsonwebtoken';
+import { checkAndAwardBadges } from './badges.js';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'launchpad-secret-key-2026';
+const JWT_SECRET = process.env.JWT_SECRET;
 
 function uid(req) {
   const t = req.headers.authorization?.replace('Bearer ', '');
@@ -18,7 +19,7 @@ export default async function handler(req, res) {
   const userId = uid(req);
 
   try {
-    const { action } = req.query;
+    const action = req.query.action || req.body.action;
 
     // List all circles
     if (req.method === 'GET' && !action) {
@@ -39,9 +40,8 @@ export default async function handler(req, res) {
           .select('circle_id').in('circle_id', ids);
         (counts || []).forEach(c => { countMap[c.circle_id] = (countMap[c.circle_id] || 0) + 1; });
       }
-      return res.status(200).json(
-        (data || []).map(c => ({ ...c, is_member: memberOf.has(c.id), member_count: countMap[c.id] || 0 }))
-      );
+      const circles = (data || []).map(c => ({ ...c, is_member: memberOf.has(c.id), member_count: countMap[c.id] || 0 }));
+      return res.status(200).json({ circles, member_of: [...memberOf] });
     }
 
     // Get single circle with all data
@@ -56,6 +56,14 @@ export default async function handler(req, res) {
         supabase.from('lp_circle_resources').select('*').eq('circle_id', id).order('created_at', { ascending: false }),
       ]);
 
+      // Fetch avatars for members
+      const memberIds = (members || []).map(m => m.user_id);
+      const { data: extras } = await supabase.from('lp_user_extra').select('user_id, avatar_url').in('user_id', memberIds);
+      const avatarMap = {};
+      extras?.forEach(e => { avatarMap[e.user_id] = e.avatar_url; });
+
+      const enrichedMembers = (members || []).map(m => ({ ...m, avatar_url: avatarMap[m.user_id] || null }));
+
       const isMember = userId ? (members || []).some(m => m.user_id === userId) : false;
       const isCreator = userId ? circle.creator_id === userId : false;
 
@@ -67,7 +75,7 @@ export default async function handler(req, res) {
       }
 
       return res.status(200).json({
-        circle, members: members || [], tasks: tasks || [],
+        circle, members: enrichedMembers, tasks: tasks || [],
         resources: resources || [], isMember, isCreator, myCompletions,
       });
     }
@@ -79,9 +87,16 @@ export default async function handler(req, res) {
       const { data: mem } = await supabase.from('lp_circle_members_v2')
         .select('id').eq('circle_id', circle_id).eq('user_id', userId).maybeSingle();
       if (!mem) return res.status(403).json({ error: 'Not a member' });
-      const { data } = await supabase.from('lp_circle_messages')
+      const { data: msgs } = await supabase.from('lp_circle_messages')
         .select('*').eq('circle_id', circle_id).order('created_at').limit(200);
-      return res.status(200).json(data || []);
+      
+      const senderIds = [...new Set((msgs || []).map(m => m.user_id))];
+      const { data: extras } = await supabase.from('lp_user_extra').select('user_id, avatar_url').in('user_id', senderIds);
+      const avatarMap = {};
+      extras?.forEach(e => { avatarMap[e.user_id] = e.avatar_url; });
+
+      const enriched = (msgs || []).map(m => ({ ...m, user_avatar: avatarMap[m.user_id] || null }));
+      return res.status(200).json(enriched);
     }
 
     // Require auth for mutations
@@ -89,7 +104,7 @@ export default async function handler(req, res) {
 
     // Create circle
     if (req.method === 'POST' && !action) {
-      const { name, description, goal, category, is_private, rules } = req.body;
+      const { name, description, goal, category, emoji, is_private, rules } = req.body;
       if (!name?.trim()) return res.status(400).json({ error: 'Name required' });
 
       const { data: user } = await supabase.from('lp_users').select('full_name').eq('id', userId).single();
@@ -98,6 +113,7 @@ export default async function handler(req, res) {
         description: description?.trim() || null,
         goal: goal?.trim() || null,
         category: category || null,
+        emoji: emoji || '👥',
         creator_id: userId,
         creator_name: user?.full_name || 'Unknown',
         is_private: is_private || false,
@@ -130,10 +146,12 @@ export default async function handler(req, res) {
       if (existing) return res.status(409).json({ error: 'Already a member' });
 
       const { data: user } = await supabase.from('lp_users').select('full_name').eq('id', userId).single();
-      await supabase.from('lp_circle_members_v2').insert({
+      const { error: joinErr } = await supabase.from('lp_circle_members_v2').insert({
         circle_id, user_id: userId, user_name: user?.full_name,
         role: 'member', rules_accepted: true,
       });
+      if (joinErr) throw joinErr;
+
       await awardXP(userId, 5, 'join_circle');
       return res.status(200).json({ ok: true });
     }
@@ -248,5 +266,9 @@ async function awardXP(userId, amount, action) {
       await supabase.from('lp_streaks').insert({ user_id: userId, total_xp: amount, level: 1, current_streak: 1, longest_streak: 1 });
     }
     await supabase.from('lp_xp_log').insert({ user_id: userId, action, xp: amount });
+    
+    // Check for new badges
+    const { data: user } = await supabase.from('lp_users').select('email, full_name').eq('id', userId).single();
+    checkAndAwardBadges(userId, user?.email, user?.full_name).catch(() => {});
   } catch {}
 }

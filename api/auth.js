@@ -3,7 +3,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import nodemailer from 'nodemailer';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'launchpad-secret-key-2026';
+const JWT_SECRET = process.env.JWT_SECRET;
 
 function generateCode() {
   return Math.floor(100000 + Math.random() * 900000).toString();
@@ -58,8 +58,10 @@ function serializeUser(u, extra = {}, profile = {}) {
     id: u.id, email: u.email, full_name: u.full_name,
     interests: u.interests, education_level: u.education_level,
     age: u.age, location: u.location, phone: u.phone,
+    opportunity_categories: u.opportunity_categories || '[]',
     avatar_url: extra.avatar_url || null,
     cv_text: extra.cv_text || null,
+    cv_filename: extra.cv_filename || null,
     email_verified: extra.email_verified || false,
     settings: extra.settings || {},
     created_at: u.created_at,
@@ -207,6 +209,11 @@ export default async function handler(req, res) {
       // Clean up verification record
       await supabase.from('lp_email_verifications').delete().eq('email', email);
 
+      if (!JWT_SECRET) {
+        console.error('CRITICAL: JWT_SECRET environment variable is missing.');
+        return res.status(500).json({ error: 'Server configuration error: Missing JWT_SECRET. Please set it in Netlify dashboard.' });
+      }
+
       const token = jwt.sign({ userId: user.id, email: user.email }, JWT_SECRET, { expiresIn: '30d' });
       const extra = await getExtra(user.id);
       const profile = await getProfile(user.id);
@@ -221,6 +228,12 @@ export default async function handler(req, res) {
       if (error || !user) return res.status(401).json({ error: 'Invalid email or password' });
       const valid = await bcrypt.compare(password, user.password_hash);
       if (!valid) return res.status(401).json({ error: 'Invalid email or password' });
+
+      if (!JWT_SECRET) {
+        console.error('CRITICAL: JWT_SECRET environment variable is missing.');
+        return res.status(500).json({ error: 'Server configuration error: Missing JWT_SECRET. Please set it in Netlify dashboard.' });
+      }
+
       const token = jwt.sign({ userId: user.id, email: user.email }, JWT_SECRET, { expiresIn: '30d' });
       const extra = await getExtra(user.id);
       const profile = await getProfile(user.id);
@@ -253,6 +266,9 @@ export default async function handler(req, res) {
       if (age !== undefined)             userUpdates.age = parseInt(age) || null;
       if (location !== undefined)        userUpdates.location = location;
       if (interests !== undefined)       userUpdates.interests = JSON.stringify(interests);
+      if (req.body.opportunity_categories !== undefined) {
+        userUpdates.opportunity_categories = JSON.stringify(req.body.opportunity_categories);
+      }
 
       let user;
       if (Object.keys(userUpdates).length > 0) {
@@ -265,9 +281,10 @@ export default async function handler(req, res) {
       }
 
       const extraUpdates = { updated_at: new Date().toISOString() };
-      if (avatar_url !== undefined) extraUpdates.avatar_url = avatar_url;
-      if (cv_text !== undefined)    extraUpdates.cv_text = cv_text;
-      if (settings !== undefined)   extraUpdates.settings = settings;
+      if (avatar_url !== undefined)     extraUpdates.avatar_url = avatar_url;
+      if (cv_text !== undefined)        extraUpdates.cv_text = cv_text;
+      if (req.body.cv_filename !== undefined) extraUpdates.cv_filename = req.body.cv_filename;
+      if (settings !== undefined)       extraUpdates.settings = settings;
 
       const { data: existingExtra } = await supabase.from('lp_user_extra').select('id').eq('user_id', decoded.userId).maybeSingle();
       if (existingExtra) {

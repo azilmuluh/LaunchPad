@@ -1,7 +1,7 @@
 import supabase from './_supabase.js';
 import jwt from 'jsonwebtoken';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'launchpad-secret-key-2026';
+const JWT_SECRET = process.env.JWT_SECRET;
 
 const XP_MAP = {
   daily_login:      10,
@@ -37,27 +37,50 @@ export default async function handler(req, res) {
       if (error) throw error;
 
       const userIds = (streaks || []).map(s => s.user_id);
-      let nameMap = {};
+      let userDataMap = {};
       if (userIds.length) {
         const { data: users } = await supabase.from('lp_users').select('id, full_name').in('id', userIds);
-        if (users) users.forEach(u => { nameMap[u.id] = u.full_name; });
+        const { data: extras } = await supabase.from('lp_user_extra').select('user_id, avatar_url').in('user_id', userIds);
+        
+        if (users) users.forEach(u => { 
+          userDataMap[u.id] = { name: u.full_name, avatar: null }; 
+        });
+        if (extras) extras.forEach(e => {
+          if (userDataMap[e.user_id]) userDataMap[e.user_id].avatar = e.avatar_url;
+        });
       }
 
-      const board = (streaks || []).map((s, i) => ({
-        rank:             i + 1,
-        user_id:          s.user_id,
-        name:             nameMap[s.user_id] || 'Anonymous',
-        total_xp:         s.total_xp         || 0,
-        level:            s.level            || 1,
-        current_streak:   s.current_streak   || 0,
-        longest_streak:   s.longest_streak   || 0,
-        opps_posted:      s.opps_posted      || 0,
-        opps_bookmarked:  s.opps_bookmarked  || 0,
-        comments_made:    s.comments_made    || 0,
-        posts_made:       s.posts_made       || 0,
-      }));
+      const board = (streaks || []).map((s, i) => {
+        const lastDate = new Date(s.last_seen || 0).setHours(0, 0, 0, 0);
+        const nowDate  = new Date().setHours(0, 0, 0, 0);
+        const diffDays = Math.round((nowDate - lastDate) / 86400000);
+        const displayStreak = diffDays > 1 ? 0 : (s.current_streak || 0);
 
-      return res.status(200).json(board);
+        return {
+          rank:             i + 1,
+          user_id:          s.user_id,
+          name:             userDataMap[s.user_id]?.name || 'Anonymous',
+          avatar_url:       userDataMap[s.user_id]?.avatar || null,
+          total_xp:         s.total_xp         || 0,
+          level:            s.level            || 1,
+          current_streak:   displayStreak,
+          longest_streak:   s.longest_streak   || 0,
+          opps_posted:      s.opps_posted      || 0,
+          opps_bookmarked:  s.opps_bookmarked  || 0,
+          comments_made:    s.comments_made    || 0,
+          posts_made:       s.posts_made       || 0,
+        };
+      });
+
+      // If logged in, fetch MY badges
+      const currentUserId = uid(req);
+      let myBadges = [];
+      if (currentUserId) {
+        const { data: b } = await supabase.from('lp_badges').select('badge_key').eq('user_id', currentUserId);
+        myBadges = (b || []).map(x => x.badge_key);
+      }
+
+      return res.status(200).json({ board, my_badges: myBadges });
     }
 
     // ── POST — log XP action ─────────────────────────────────────────────
@@ -92,12 +115,21 @@ export default async function handler(req, res) {
       const now = new Date();
 
       if (st) {
-        const last = new Date(st.last_seen || 0);
-        const diffDays = Math.floor((now - last) / 86400000);
+        // Calculate diff in calendar days
+        const lastDate = new Date(st.last_seen || 0).setHours(0, 0, 0, 0);
+        const nowDate  = new Date().setHours(0, 0, 0, 0);
+        const diffDays = Math.round((nowDate - lastDate) / 86400000);
+
         let newStreak = st.current_streak || 1;
         if (action === 'daily_login') {
-          if (diffDays === 1) newStreak = (st.current_streak || 0) + 1;
-          else if (diffDays > 1) newStreak = 1;
+          if (diffDays === 1) {
+            newStreak = (st.current_streak || 0) + 1;
+          } else if (diffDays > 1) {
+            newStreak = 1;
+          } else {
+            // diffDays === 0 (same day) -> keep existing streak
+            newStreak = st.current_streak || 1;
+          }
         }
         const newXP    = (st.total_xp || 0) + xp;
         const newLevel = Math.floor(newXP / 500) + 1;

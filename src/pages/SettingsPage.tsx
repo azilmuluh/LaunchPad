@@ -3,9 +3,11 @@ import { apiRequest, setSession, getToken, clearSession } from '../lib/auth';
 import { useNavigate } from 'react-router-dom';
 import { Bell, Shield, Palette, Globe, Trash2, LogOut, Check, ChevronRight, Sun, Moon, Monitor } from 'lucide-react';
 import { applyTheme, initTheme, type Theme } from '../lib/theme';
+import { useI18n } from '../lib/i18n';
 export { initTheme };
 
 export default function SettingsPage({ user, setUser }: any) {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const [saving, setSaving]   = useState(false);
   const [saved, setSaved]     = useState(false);
@@ -46,7 +48,7 @@ export default function SettingsPage({ user, setUser }: any) {
         className="w-12 h-6 rounded-full transition-all flex-shrink-0 relative"
         style={{ background: settings[settingKey] ? '#FF5C00' : '#e0ddd6', border: '2px solid #0A0A0A' }}>
         <div className="w-4 h-4 rounded-full absolute top-0.5 transition-all"
-          style={{ background: '#fff', border: '1.5px solid #0A0A0A', left: settings[settingKey] ? '26px' : '2px' }} />
+          style={{ background: 'var(--surface)', border: '1.5px solid #0A0A0A', left: settings[settingKey] ? '26px' : '2px' }} />
       </button>
     </div>
   );
@@ -61,80 +63,84 @@ export default function SettingsPage({ user, setUser }: any) {
   return (
     <div className="max-w-xl mx-auto px-4 py-6">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="font-black text-2xl">Settings</h1>
-        {saved && <span className="nb-badge" style={{ color: '#065F46', borderColor: '#065F46', background: '#ECFDF5' }}><Check size={10} className="inline mr-1" />Saved</span>}
+        <h1 className="font-black text-2xl">{t('settings')}</h1>
+        {saved && <span className="nb-badge" style={{ color: '#065F46', borderColor: '#065F46', background: '#ECFDF5' }}><Check size={10} className="inline mr-1" />{t('saved')}</span>}
       </div>
 
       {/* Appearance — Theme switcher */}
-      <Section icon={<Palette size={16} style={{ color: '#FFD600' }} />} title="Appearance">
+      <Section icon={<Palette size={16} style={{ color: '#FFD600' }} />} title={t('appearance')}>
         <div className="mb-4">
-          <p className="font-bold text-sm mb-3">Theme</p>
+          <p className="font-bold text-sm mb-3">{t('theme')}</p>
           <div className="grid grid-cols-3 gap-2">
             {([
-              { id: 'light',  label: 'Light',  icon: <Sun  size={18} /> },
-              { id: 'dark',   label: 'Dark',   icon: <Moon size={18} /> },
-              { id: 'system', label: 'System', icon: <Monitor size={18} /> },
-            ] as const).map(t => (
-              <button key={t.id} onClick={() => handleTheme(t.id)}
+              { id: 'light',  label: t('light'),  icon: <Sun  size={18} /> },
+              { id: 'dark',   label: t('dark'),   icon: <Moon size={18} /> },
+              { id: 'system', label: t('system'), icon: <Monitor size={18} /> },
+            ] as const).map(t_theme => (
+              <button key={t_theme.id} onClick={() => handleTheme(t_theme.id)}
                 className="nb-btn flex flex-col items-center gap-2 py-4 text-xs font-black transition-all"
-                style={theme === t.id
+                style={theme === t_theme.id
                   ? { background: '#FF5C00', color: '#fff', borderColor: '#FF5C00', boxShadow: '3px 3px 0 #0A0A0A' }
                   : { background: 'var(--surface, #fff)' }
                 }>
-                {t.icon}
-                {t.label}
-                {theme === t.id && <Check size={12} />}
+                {t_theme.icon}
+                {t_theme.label}
+                {theme === t_theme.id && <Check size={12} />}
               </button>
             ))}
           </div>
         </div>
-        <Toggle label="Compact Cards" desc="Show more opportunities per screen" settingKey="compact_cards" />
-        <Toggle label="Show XP Animations" desc="Animated XP gain notifications" settingKey="show_xp_anim" />
+        <Toggle label={t('compact_cards')} desc={t('compact_cards_desc')} settingKey="compact_cards" />
+        <Toggle label={t('show_xp_anim')} desc={t('show_xp_anim_desc')} settingKey="show_xp_anim" />
       </Section>
 
-      <Section icon={<Bell size={16} style={{ color: '#FF5C00' }} />} title="Notifications">
-        <Toggle label="Opportunity Alerts" desc="Get notified about new matching opportunities" settingKey="notify_opportunities" />
-        <Toggle label="Community Updates" desc="Notifications for likes, comments, and replies" settingKey="notify_community" />
-        <Toggle label="Weekly Digest" desc="Weekly summary of top opportunities" settingKey="notify_digest" />
-        <Toggle label="Badge Emails" desc="Email when you earn a new badge" settingKey="notify_badges" />
+      <Section icon={<Bell size={16} style={{ color: '#FF5C00' }} />} title={t('notifications')}>
+        <Toggle label={t('opp_alerts')} desc={t('opp_alerts_desc')} settingKey="notify_opportunities" />
+        <Toggle label={t('comm_updates')} desc={t('comm_updates_desc')} settingKey="notify_community" />
+        <Toggle label={t('weekly_digest')} desc={t('weekly_digest_desc')} settingKey="notify_digest" />
+        <Toggle label={t('badge_emails')} desc={t('badge_emails_desc')} settingKey="notify_badges" />
+        <div className="mt-2" />
+        <Toggle label="Quest updates" desc="Get notified when you complete quests." settingKey="notify_quests" />
+        <Toggle label="AI roadmaps" desc="Get notified when LaunchPad AI creates a roadmap/goal for you." settingKey="notify_ai" />
+        <Toggle label="Streak reminders" desc="Get a reminder when your streak is at risk." settingKey="notify_streak" />
       </Section>
 
-      <Section icon={<Globe size={16} style={{ color: '#0B1E3D' }} />} title="Discovery">
-        <Toggle label="Include Remote Opportunities" desc="Show online and remote opportunities globally" settingKey="include_remote" />
-        <Toggle label="Cameroon-Focused" desc="Prioritise opportunities relevant to Cameroon" settingKey="cameroon_only" />
-        <Toggle label="Personalized Feed" desc="Show community posts based on your interests" settingKey="personalized_feed" />
+      <Section icon={<Globe size={16} style={{ color: 'var(--surface)' }} />} title={t('discovery')}>
+        <Toggle label={t('include_remote')} desc={t('include_remote_desc')} settingKey="include_remote" />
+        <Toggle label={t('cameroon_focused')} desc={t('cameroon_only_desc')} settingKey="cameroon_only" />
+        <Toggle label={t('personalized_feed')} desc={t('personalized_feed_desc')} settingKey="personalized_feed" />
       </Section>
 
-      <Section icon={<Shield size={16} style={{ color: '#00C853' }} />} title="Privacy">
-        <Toggle label="Show on Leaderboard" desc="Display your name in the public leaderboard" settingKey="show_leaderboard" />
-        <Toggle label="Share Activity" desc="Let others see your engagement stats" settingKey="share_activity" />
+      <Section icon={<Shield size={16} style={{ color: '#00C853' }} />} title={t('privacy')}>
+        <Toggle label={t('show_leaderboard')} desc={t('show_leaderboard_desc')} settingKey="show_leaderboard" />
+        <Toggle label={t('share_activity')} desc={t('share_activity_desc')} settingKey="share_activity" />
       </Section>
 
       <div className="nb-card p-5">
         <h3 className="font-black text-base mb-3 flex items-center gap-2">
-          <Shield size={16} style={{ color: '#E53935' }} /> Account
+          <Shield size={16} style={{ color: '#E53935' }} /> {t('account')}
         </h3>
         <button onClick={() => { clearSession(); setUser(null); navigate('/login'); }}
           className="nb-btn w-full flex items-center justify-between px-4 py-3 text-sm mb-2"
           style={{ background: '#FFF3EE', color: '#FF5C00', borderColor: '#FF5C00' }}>
-          <span className="flex items-center gap-2"><LogOut size={14} /> Sign Out</span>
+          <span className="flex items-center gap-2"><LogOut size={14} /> {t('sign_out')}</span>
           <ChevronRight size={14} />
         </button>
         <button onClick={() => setDanger(d => !d)}
           className="nb-btn w-full flex items-center justify-between px-4 py-3 text-sm"
           style={{ background: '#FFF0F0', color: '#E53935', borderColor: '#E53935' }}>
-          <span className="flex items-center gap-2"><Trash2 size={14} /> Delete Account</span>
+          <span className="flex items-center gap-2"><Trash2 size={14} /> {t('delete_account')}</span>
           <ChevronRight size={14} />
         </button>
         {danger && (
           <div className="mt-3 p-3 rounded-xl" style={{ background: '#FFF0F0', border: '2px solid #E53935' }}>
-            <p className="text-xs font-bold mb-2" style={{ color: '#E53935' }}>This permanently deletes your account. Contact support to proceed.</p>
-            <a href="mailto:support@launchpad.app" className="nb-btn nb-btn-ghost px-3 py-1.5 text-xs block text-center" style={{ borderColor: '#E53935', color: '#E53935' }}>Contact Support</a>
+            <p className="text-xs font-bold mb-2" style={{ color: '#E53935' }}>{t('permanently_delete')}</p>
+            <a href="mailto:support@launchpad.app" className="nb-btn nb-btn-ghost px-3 py-1.5 text-xs block text-center" style={{ borderColor: '#E53935', color: '#E53935' }}>{t('contact_support')}</a>
           </div>
         )}
       </div>
 
-      <p className="text-center text-xs font-bold mt-4" style={{ color: '#ccc' }}>LaunchPad v2.1 &middot; Founded Dec 5, 2025</p>
+      <p className="text-center text-xs font-bold mt-4" style={{ color: 'var(--muted)' }}>LaunchPad v2.1 &middot; Founded Dec 5, 2025</p>
     </div>
   );
 }

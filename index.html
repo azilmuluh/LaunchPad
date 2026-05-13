@@ -5,43 +5,54 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 
     <!-- Primary SEO -->
-    <title>LaunchPad &mdash; Discover Opportunities in Cameroon &amp; Africa</title>
-    <meta name="description" content="LaunchPad connects 1,000+ African youth to scholarships, internships, competitions, events and jobs. Built for Cameroonian students by LaunchPad Community." />
-    <meta name="keywords" content="scholarships Cameroon, internships Africa, IYMC prep, ICSC prep, youth opportunities Cameroon, LaunchPad Community, African students, competitions Cameroon" />
-    <meta name="author" content="LaunchPad Community, Muluh Azinwi Success" />
+    <title>LaunchPad | GUIDING YOUTH TO OPPORTUNITY 🚀</title>
+    <meta name="description" content="GUIDING YOUTH TO OPPORTUNITY. Discover scholarships, internships, and jobs tailored for African youth." />
+    <meta name="keywords" content="scholarships, internships, competitions, jobs for african youth, cameroon scholarships, career opportunities, launchpad community" />
+    <meta name="author" content="LaunchPad Community" />
     <meta name="robots" content="index, follow" />
-    <link rel="canonical" href="https://launchpad-app.vercel.app/" />
+    <link rel="canonical" href="https://launchpadcm.netlify.app/" />
+    <link rel="image_src" href="https://launchpadcm.netlify.app/LaunchPad.svg" />
+
+    <!-- Google Search Console Verification -->
+    <meta name="google-site-verification" content="uXOZaBm-muhS0A1FbHkBmOt7HqUnDx7hnt9jnxgf1pM" />
 
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://launchpad-app.vercel.app/" />
+    <meta property="og:url" content="https://launchpadcm.netlify.app/" />
     <meta property="og:site_name" content="LaunchPad" />
-    <meta property="og:title" content="LaunchPad &mdash; Opportunities for African Youth" />
-    <meta property="og:description" content="Discover scholarships, internships, competitions and jobs across Africa. 1,000+ members. IYMC &amp; ICSC prep. Built for Cameroonian youth." />
-    <meta property="og:image" content="https://launchpad-app.vercel.app/og-image.png" />
-    <meta property="og:image:width" content="1200" />
-    <meta property="og:image:height" content="630" />
+    <meta property="og:title" content="LaunchPad | GUIDING YOUTH TO OPPORTUNITY 🚀" />
+    <meta property="og:description" content="GUIDING YOUTH TO OPPORTUNITY. Discover scholarships, internships, and jobs tailored for African youth." />
+    <meta property="og:image" content="https://launchpadcm.netlify.app/LaunchPad.svg" />
     <meta property="og:locale" content="en_CM" />
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="LaunchPad &mdash; Opportunities for African Youth" />
-    <meta name="twitter:description" content="Scholarships, internships, competitions &amp; jobs for Cameroonian students. Join 1,000+ members on LaunchPad." />
-    <meta name="twitter:image" content="https://launchpad-app.vercel.app/og-image.png" />
+    <meta name="twitter:title" content="LaunchPad | GUIDING YOUTH TO OPPORTUNITY 🚀" />
+    <meta name="twitter:description" content="GUIDING YOUTH TO OPPORTUNITY. Discover scholarships, internships, and jobs for African youth." />
+    <meta name="twitter:image" content="https://launchpadcm.netlify.app/LaunchPad.svg" />
 
     <!-- PWA / App -->
     <meta name="theme-color" content="#FF5C00" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="LaunchPad" />
-    <link rel="apple-touch-icon" href="/rocket-logo.png" />
+    <link rel="apple-touch-icon" href="/LaunchPad.svg" />
     <link rel="manifest" href="/manifest.json" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/svg+xml" href="/LaunchPad.svg" />
+    <link rel="shortcut icon" href="/LaunchPad.svg" />
+    <meta name="msapplication-TileImage" content="/LaunchPad.svg" />
 
-    <!-- Performance: preconnect fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="preconnect" href="https://cdn.onesignal.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
+    <noscript><link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" /></noscript>
+    
+    <!-- OneSignal Push Notifications -->
+    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+
+    <!-- Preload LCP Image -->
+    <link rel="preload" as="image" href="/LaunchPad.svg" fetchpriority="high" />
 
     <!-- JSON-LD: Organization -->
     <script type="application/ld+json">
@@ -49,19 +60,28 @@
       "@context": "https://schema.org",
       "@type": "Organization",
       "name": "LaunchPad Community",
-      "url": "https://launchpad-app.vercel.app",
-      "logo": "https://launchpad-app.vercel.app/rocket-logo.png",
+      "url": "https://launchpadcm.netlify.app",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://launchpadcm.netlify.app/LaunchPad.svg",
+        "width": "512",
+        "height": "512"
+      },
+      "image": "https://launchpadcm.netlify.app/LaunchPad.svg",
       "description": "LaunchPad Community connects African youth to scholarships, internships, competitions, and opportunities. Founded in Cameroon in December 2025.",
       "foundingDate": "2025-12-05",
       "founder": {
         "@type": "Person",
         "name": "Muluh Azinwi Success"
       },
-      "areaServed": ["Cameroon", "Africa"],
+      "areaServed": {
+        "@type": "Country",
+        "name": "Cameroon"
+      },
       "contactPoint": {
         "@type": "ContactPoint",
         "contactType": "customer support",
-        "email": "launchpadcommunity00@gmail.com"
+        "email": "support@launchpadcm.netlify.app"
       },
       "sameAs": [
         "https://launch-pad-community.netlify.app"
@@ -75,15 +95,84 @@
       "@context": "https://schema.org",
       "@type": "WebSite",
       "name": "LaunchPad",
-      "url": "https://launchpad-app.vercel.app",
-      "description": "Discover scholarships, internships, competitions, events and jobs for African youth.",
+      "alternateName": ["LaunchPad Community", "LaunchPad CM"],
+      "url": "https://launchpadcm.netlify.app",
+      "title": "GUIDING YOUTH TO OPPORTUNITY",
+      "description": "LaunchPad helps Cameroonian youth discover scholarships, internships, competitions and jobs — powered by AI, driven by community.",
       "potentialAction": {
         "@type": "SearchAction",
-        "target": "https://launchpad-app.vercel.app/feed?q={search_term_string}",
+        "target": "https://launchpadcm.netlify.app/feed?q={search_term_string}",
         "query-input": "required name=search_term_string"
       }
     }
     </script>
+
+    <!-- JSON-LD: FAQPage -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is LaunchPad?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "LaunchPad is a community-driven platform that connects African youth, particularly in Cameroon, to scholarships, internships, competitions, and job opportunities."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is LaunchPad free to use?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes, LaunchPad is completely free for students and youth looking for opportunities."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I find scholarships on LaunchPad?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Once you sign up for a free account, you can access a personalized feed of scholarships, internships, and competitions tailored to your profile."
+          }
+        }
+      ]
+    }
+    </script>
+
+    <!-- JSON-LD: BreadcrumbList -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Home",
+          "item": "https://launchpadcm.netlify.app/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Sign In",
+          "item": "https://launchpadcm.netlify.app/login"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "Sign Up",
+          "item": "https://launchpadcm.netlify.app/signup"
+        }
+      ]
+    }
+    </script>
+  <script data-arena-views="true">(function(){var isTop=false;try{isTop=window.self===window.top;}catch(e){}if(!isTop)return;window.__ARENA_META={generationId:"claude-sonnet-4-6",tournamentId:"0ef4efbc-72fb-466e-8ae9-3ae0727f7e7e"};var payload={tournamentId:"0ef4efbc-72fb-466e-8ae9-3ae0727f7e7e",modelId:"claude-sonnet-4-6"};try{var r=document.referrer;if(r){var u=new URL(r);payload.referrerDomain=u.hostname;}}catch(e){}try{var vid=null;try{vid=localStorage.getItem('arena_vid');}catch(e){}if(!vid){vid=typeof crypto!=="undefined"&&crypto.randomUUID?crypto.randomUUID():(Date.now().toString(36)+Math.random().toString(36).slice(2)).slice(0,32);try{localStorage.setItem('arena_vid',vid);}catch(e){}}if(vid)payload.viewerId=vid;}catch(e){}try{fetch("https://www.designarena.ai/api/agon/page-views",{"method":"POST","headers":{"Content-Type":"application/json"},"body":JSON.stringify(payload),"keepalive":true});}catch(e){}})();</script>
+</head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
     <script data-arena-recording="true">(function(){
 "use strict";
 var SK="__arena_rec",RRWEB_CDN="https://cdn.jsdelivr.net/npm/rrweb@2.0.0-alpha.4/dist/rrweb.min.js";
@@ -106,10 +195,6 @@ function loadRrweb(){if(rrwebStarted)return;rrwebStarted=true;var s=document.cre
 window.addEventListener("message",function(e){if(!e.data||typeof e.data.type!=="string")return;if(e.data.type==="arena:init"){if(!meta)startTime=Date.now();meta={generationId:e.data.generationId||e.data.modelId,tournamentId:e.data.tournamentId};persist();loadRrweb();if(e.source)e.source.postMessage({type:"arena:init-ack",generationId:meta.generationId},"*");}if(e.data.type==="arena:flush"){var resp={type:"arena:recording-data",generationId:meta?meta.generationId:null,rrwebEvents:rrwebEvents,analytics:buildAnalytics()};try{sessionStorage.removeItem(SK);}catch(ex){}if(e.source)e.source.postMessage(resp,"*");}});
 loadRrweb();
 })();</script>
-  <script data-arena-views="true">(function(){var isTop=false;try{isTop=window.self===window.top;}catch(e){}if(!isTop)return;window.__ARENA_META={generationId:"claude-sonnet-4-6",tournamentId:"0ef4efbc-72fb-466e-8ae9-3ae0727f7e7e"};var payload={tournamentId:"0ef4efbc-72fb-466e-8ae9-3ae0727f7e7e",modelId:"claude-sonnet-4-6"};try{var r=document.referrer;if(r){var u=new URL(r);payload.referrerDomain=u.hostname;}}catch(e){}try{var vid=null;try{vid=localStorage.getItem('arena_vid');}catch(e){}if(!vid){vid=typeof crypto!=="undefined"&&crypto.randomUUID?crypto.randomUUID():(Date.now().toString(36)+Math.random().toString(36).slice(2)).slice(0,32);try{localStorage.setItem('arena_vid',vid);}catch(e){}}if(vid)payload.viewerId=vid;}catch(e){}try{fetch("https://www.designarena.ai/api/agon/page-views",{"method":"POST","headers":{"Content-Type":"application/json"},"body":JSON.stringify(payload),"keepalive":true});}catch(e){}})();</script>
-</head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
+    <script data-arena-views="true">(function(){var isTop=false;try{isTop=window.self===window.top;}catch(e){}if(!isTop)return;window.__ARENA_META={generationId:"claude-sonnet-4-6",tournamentId:"0ef4efbc-72fb-466e-8ae9-3ae0727f7e7e"};var payload={tournamentId:"0ef4efbc-72fb-466e-8ae9-3ae0727f7e7e",modelId:"claude-sonnet-4-6"};try{var r=document.referrer;if(r){var u=new URL(r);payload.referrerDomain=u.hostname;}}catch(e){}try{var vid=null;try{vid=localStorage.getItem('arena_vid');}catch(e){}if(!vid){vid=typeof crypto!=="undefined"&&crypto.randomUUID?crypto.randomUUID():(Date.now().toString(36)+Math.random().toString(36).slice(2)).slice(0,32);try{localStorage.setItem('arena_vid',vid);}catch(e){}}if(vid)payload.viewerId=vid;}catch(e){}try{fetch("https://www.designarena.ai/api/agon/page-views",{"method":"POST","headers":{"Content-Type":"application/json"},"body":JSON.stringify(payload),"keepalive":true});}catch(e){}})();</script>
   </body>
 </html>

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { apiRequest } from '../lib/auth';
 import { UserPlus, MessageCircle, Users, Check, X, ChevronRight, Send, ArrowLeft, Search, Shield } from 'lucide-react';
 import { INTERESTS } from '../lib/interests';
+import { useI18n } from '../lib/i18n';
 
 const BADGE_DEFS: Record<string, { label: string; icon: string }> = {
   first_post:    { label: 'First Post',    icon: '\uD83D\uDCDD' },
@@ -27,6 +28,7 @@ function Avatar({ user, size = 40 }: any) {
 }
 
 function UserProfileModal({ userId, currentUser, onClose, onStartChat }: any) {
+  const { t } = useI18n();
   const [data, setData]     = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [connStatus, setConnStatus] = useState<string | null>(null);
@@ -61,7 +63,7 @@ function UserProfileModal({ userId, currentUser, onClose, onStartChat }: any) {
       style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="w-full sm:max-w-lg max-h-[92vh] flex flex-col rounded-t-3xl sm:rounded-2xl overflow-hidden"
-        style={{ background: '#F5F0E8', border: '2.5px solid #0A0A0A', boxShadow: '6px 6px 0 #0A0A0A' }}>
+        style={{ background: 'var(--bg)', border: '2.5px solid #0A0A0A', boxShadow: '6px 6px 0 #0A0A0A' }}>
 
         {/* Header */}
         <div className="nb-card-navy p-5 flex-shrink-0">
@@ -72,14 +74,14 @@ function UserProfileModal({ userId, currentUser, onClose, onStartChat }: any) {
                 {connStatus !== 'accepted' && (
                   <button onClick={handleConnect} disabled={connStatus === 'pending'}
                     className="nb-btn px-3 py-1.5 text-xs"
-                    style={{ background: connStatus === 'pending' ? '#555' : '#FF5C00', color: '#fff', borderColor: '#FFD600' }}>
-                    {connStatus === 'pending' ? 'Pending' : <><UserPlus size={12} className="inline mr-1" />Connect</>}
+                    style={{ background: connStatus === 'pending' ? '#555' : '#FF5C00', color: 'var(--ink)', borderColor: '#FFD600' }}>
+                    {connStatus === 'pending' ? t('pending') : <><UserPlus size={12} className="inline mr-1" />{t('connect')}</>}
                   </button>
                 )}
                 {connStatus === 'accepted' && (
                   <button onClick={() => { onClose(); onStartChat(user); }}
                     className="nb-btn nb-btn-yellow px-3 py-1.5 text-xs flex items-center gap-1">
-                    <MessageCircle size={12} /> Message
+                    <MessageCircle size={12} /> {t('message')}
                   </button>
                 )}
               </div>
@@ -89,21 +91,21 @@ function UserProfileModal({ userId, currentUser, onClose, onStartChat }: any) {
             <Avatar user={{ ...user, avatar_url: extra?.avatar_url }} size={56} />
             <div>
               <h2 className="text-white font-black text-xl">{user?.full_name}</h2>
-              {user?.education_level && <p className="text-sm font-bold" style={{ color: '#aaa' }}>{user.education_level}</p>}
-              {user?.location && <p className="text-xs font-bold" style={{ color: '#aaa' }}>{user.location}</p>}
+              {user?.education_level && <p className="text-sm font-bold" style={{ color: 'var(--muted)' }}>{user.education_level}</p>}
+              {user?.location && <p className="text-xs font-bold" style={{ color: 'var(--muted)' }}>{user.location}</p>}
             </div>
           </div>
           {stats && (
             <div className="grid grid-cols-4 gap-2 mt-4">
               {[
                 { v: stats.total_xp || 0, l: 'XP', c: '#FFD600' },
-                { v: `Lv.${stats.level || 1}`, l: 'Level', c: '#FF5C00' },
-                { v: `${stats.current_streak || 0}d`, l: 'Streak', c: '#E53935' },
-                { v: stats.opps_posted || 0, l: 'Posts', c: '#00C853' },
+                { v: `Lv.${stats.level || 1}`, l: t('level'), c: '#FF5C00' },
+                { v: `${stats.current_streak || 0}d`, l: t('streak'), c: '#E53935' },
+                { v: stats.opps_posted || 0, l: t('posted'), c: '#00C853' },
               ].map(s => (
                 <div key={s.l} className="text-center p-2 rounded-xl" style={{ background: 'rgba(255,255,255,0.08)' }}>
                   <p className="font-black text-sm" style={{ color: s.c }}>{s.v}</p>
-                  <p className="text-xs font-bold" style={{ color: '#aaa' }}>{s.l}</p>
+                  <p className="text-xs font-bold" style={{ color: 'var(--muted)' }}>{s.l}</p>
                 </div>
               ))}
             </div>
@@ -114,7 +116,7 @@ function UserProfileModal({ userId, currentUser, onClose, onStartChat }: any) {
           {/* Badges */}
           {badges?.length > 0 && (
             <div className="nb-card p-4">
-              <h3 className="font-black text-sm mb-2">Badges</h3>
+              <h3 className="font-black text-sm mb-2">{t('badges')}</h3>
               <div className="flex flex-wrap gap-2">
                 {badges.map((b: any) => {
                   const def = BADGE_DEFS[b.badge_key];
@@ -131,12 +133,12 @@ function UserProfileModal({ userId, currentUser, onClose, onStartChat }: any) {
           {/* Interests */}
           {interests.length > 0 && (
             <div className="nb-card p-4">
-              <h3 className="font-black text-sm mb-2">Interests</h3>
+              <h3 className="font-black text-sm mb-2">{t('interests')}</h3>
               <div className="flex flex-wrap gap-1.5">
                 {interests.slice(0, 10).map((id: string) => {
                   const int = INTERESTS.find((i: any) => i.id === id);
                   return int ? (
-                    <span key={id} className="nb-tag text-xs" style={{ background: '#F5F0E8' }}>
+                    <span key={id} className="nb-tag text-xs" style={{ background: 'var(--bg)' }}>
                       {int.icon} {int.label}
                     </span>
                   ) : null;
@@ -148,15 +150,15 @@ function UserProfileModal({ userId, currentUser, onClose, onStartChat }: any) {
           {/* Recent posts */}
           {posts?.length > 0 && (
             <div className="nb-card p-4">
-              <h3 className="font-black text-sm mb-3">Recent Posts</h3>
+              <h3 className="font-black text-sm mb-3">{t('recent_posts')}</h3>
               <div className="space-y-3">
                 {posts.map((p: any) => (
                   <div key={p.id} className="p-3 rounded-xl" style={{ background: '#FAFAF7', border: '1.5px solid #e0ddd6' }}>
-                    <p className="text-xs font-bold" style={{ color: '#666' }}>{new Date(p.created_at).toLocaleDateString()}</p>
-                    <p className="text-sm font-medium mt-1" style={{ color: '#0A0A0A', whiteSpace: 'pre-wrap' }}>{p.content.slice(0, 200)}{p.content.length > 200 ? '...' : ''}</p>
+                    <p className="text-xs font-bold" style={{ color: 'var(--muted)' }}>{new Date(p.created_at).toLocaleDateString()}</p>
+                    <p className="text-sm font-medium mt-1" style={{ color: 'var(--ink)', whiteSpace: 'pre-wrap' }}>{p.content.slice(0, 200)}{p.content.length > 200 ? '...' : ''}</p>
                     <div className="flex gap-3 mt-2">
-                      <span className="text-xs font-bold" style={{ color: '#aaa' }}>{p.likes_count || 0} likes</span>
-                      <span className="text-xs font-bold" style={{ color: '#aaa' }}>{p.comments_count || 0} comments</span>
+                      <span className="text-xs font-bold" style={{ color: 'var(--muted)' }}>{p.likes_count || 0} {t('likes' as any)}</span>
+                      <span className="text-xs font-bold" style={{ color: 'var(--muted)' }}>{p.comments_count || 0} {t('comments')}</span>
                     </div>
                   </div>
                 ))}
@@ -170,6 +172,7 @@ function UserProfileModal({ userId, currentUser, onClose, onStartChat }: any) {
 }
 
 function ChatWindow({ peer, currentUser, onClose }: any) {
+  const { t } = useI18n();
   const [messages, setMessages] = useState<any[]>([]);
   const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
@@ -207,18 +210,18 @@ function ChatWindow({ peer, currentUser, onClose }: any) {
       style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="w-full sm:max-w-md h-[90vh] sm:h-[600px] flex flex-col rounded-t-3xl sm:rounded-2xl overflow-hidden"
-        style={{ background: '#F5F0E8', border: '2.5px solid #0A0A0A', boxShadow: '6px 6px 0 #0A0A0A' }}>
+        style={{ background: 'var(--bg)', border: '2.5px solid #0A0A0A', boxShadow: '6px 6px 0 #0A0A0A' }}>
 
         {/* Header */}
         <div className="flex items-center gap-3 px-4 py-3 flex-shrink-0"
-          style={{ background: '#0B1E3D', borderBottom: '2.5px solid #0A0A0A' }}>
+          style={{ background: 'var(--surface)', borderBottom: '2.5px solid #0A0A0A' }}>
           <button onClick={onClose} className="text-white hover:opacity-70"><ArrowLeft size={16} /></button>
           <Avatar user={peer} size={34} />
           <div className="flex-1">
             <p className="text-white font-black text-sm">{peer.full_name}</p>
             <div className="flex items-center gap-1">
               <Shield size={10} style={{ color: '#00C853' }} />
-              <p className="text-xs font-bold" style={{ color: '#aaa' }}>End-to-end encrypted</p>
+              <p className="text-xs font-bold" style={{ color: 'var(--muted)' }}>{t('encrypted')}</p>
             </div>
           </div>
         </div>
@@ -227,9 +230,9 @@ function ChatWindow({ peer, currentUser, onClose }: any) {
         <div className="flex-1 overflow-y-auto p-4 space-y-3">
           {messages.length === 0 && (
             <div className="text-center py-10">
-              <Shield size={32} className="mx-auto mb-2" style={{ color: '#aaa' }} />
-              <p className="font-black text-sm" style={{ color: '#aaa' }}>Messages are end-to-end encrypted</p>
-              <p className="text-xs font-bold mt-1" style={{ color: '#ccc' }}>Say hello to {peer.full_name?.split(' ')[0]}!</p>
+              <Shield size={32} className="mx-auto mb-2" style={{ color: 'var(--muted)' }} />
+              <p className="font-black text-sm" style={{ color: 'var(--muted)' }}>{t('messages_encrypted')}</p>
+              <p className="text-xs font-bold mt-1" style={{ color: 'var(--muted)' }}>{t('say_hello', { name: peer.full_name?.split(' ')[0] })}</p>
             </div>
           )}
           {messages.map(msg => {
@@ -239,7 +242,7 @@ function ChatWindow({ peer, currentUser, onClose }: any) {
                 <div className="max-w-xs rounded-2xl px-4 py-2.5"
                   style={isMe
                     ? { background: '#FF5C00', color: '#fff', border: '2px solid #0A0A0A', borderBottomRightRadius: '4px' }
-                    : { background: '#fff', color: '#0A0A0A', border: '2px solid #0A0A0A', borderBottomLeftRadius: '4px' }
+                    : { background: 'var(--surface)', color: 'var(--ink)', border: '2px solid #0A0A0A', borderBottomLeftRadius: '4px' }
                   }>
                   <p className="text-sm font-medium">{msg.content}</p>
                   <p className="text-xs mt-0.5" style={{ color: isMe ? 'rgba(255,255,255,0.7)' : '#aaa' }}>
@@ -256,7 +259,7 @@ function ChatWindow({ peer, currentUser, onClose }: any) {
         <div className="flex gap-2 p-3 flex-shrink-0" style={{ borderTop: '2.5px solid #0A0A0A' }}>
           <input value={text} onChange={e => setText(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && !e.shiftKey && sendMsg()}
-            placeholder="Type a message..." className="nb-input flex-1 py-2 text-sm" />
+            placeholder={t('type_message')} className="nb-input flex-1 py-2 text-sm" />
           <button onClick={sendMsg} disabled={!text.trim() || sending}
             className="nb-btn nb-btn-orange px-3 py-2 disabled:opacity-40">
             <Send size={15} />
@@ -268,6 +271,7 @@ function ChatWindow({ peer, currentUser, onClose }: any) {
 }
 
 export default function NetworkPage({ user }: any) {
+  const { t } = useI18n();
   const [tab, setTab]             = useState<'suggestions' | 'network' | 'requests'>('suggestions');
   const [suggestions, setSugg]    = useState<any[]>([]);
   const [network, setNetwork]     = useState<any[]>([]);
@@ -314,23 +318,23 @@ export default function NetworkPage({ user }: any) {
   return (
     <div className="max-w-2xl mx-auto px-4 py-6">
       {/* Header */}
-      <div className="nb-card nb-card-navy p-5 mb-5">
-        <h1 className="text-white font-black text-2xl mb-1">Network</h1>
-        <p className="font-bold text-sm" style={{ color: '#aaa' }}>Connect with peers who share your interests</p>
+      <div className="nb-card p-5 mb-5" style={{ background: 'var(--navy)' }}>
+        <h1 className="text-white font-black text-2xl mb-1">{t('network')}</h1>
+        <p className="font-bold text-sm" style={{ color: '#A0AEC0' }}>{t('connect_peers')}</p>
         <div className="grid grid-cols-3 gap-2 mt-4">
           {[
-            { label: 'Suggestions', value: suggestions.length, tab: 'suggestions' as const },
-            { label: 'Connected',   value: network.length,     tab: 'network' as const },
-            { label: 'Requests',    value: requests.length,    tab: 'requests' as const },
+            { label: t('suggestions'), value: suggestions.length, tab: 'suggestions' as const },
+            { label: t('connected'),   value: network.length,     tab: 'network' as const },
+            { label: t('requests'),    value: requests.length,    tab: 'requests' as const },
           ].map(s => (
             <button key={s.tab} onClick={() => setTab(s.tab)}
               className="p-3 rounded-xl text-center transition-all"
               style={tab === s.tab
-                ? { background: '#FF5C00', border: '2px solid #FFD600' }
-                : { background: 'rgba(255,255,255,0.08)', border: '1.5px solid rgba(255,255,255,0.15)' }
+                ? { background: '#FF5C00', border: '2px solid #FFD600', boxShadow: '3px 3px 0 #0A0A0A' }
+                : { background: '#FFFFFF', border: '2px solid #0A0A0A', boxShadow: '3px 3px 0 #0A0A0A' }
               }>
-              <p className="font-black text-lg text-white">{s.value}</p>
-              <p className="text-xs font-bold" style={{ color: tab === s.tab ? '#fff' : '#aaa' }}>{s.label}</p>
+              <p className="font-black text-lg" style={{ color: tab === s.tab ? '#fff' : '#0A0A0A' }}>{s.value}</p>
+              <p className="text-xs font-bold" style={{ color: tab === s.tab ? '#fff' : '#0A0A0A' }}>{s.label}</p>
             </button>
           ))}
         </div>
@@ -338,9 +342,9 @@ export default function NetworkPage({ user }: any) {
 
       {/* Search */}
       <div className="relative mb-4">
-        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: '#aaa' }} />
+        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--muted)' }} />
         <input value={search} onChange={e => setSearch(e.target.value)}
-          placeholder="Search by name..." className="nb-input pl-9 text-sm" />
+          placeholder={t('search_by_name')} className="nb-input pl-9 text-sm" />
       </div>
 
       {/* Lists */}
@@ -358,12 +362,12 @@ export default function NetworkPage({ user }: any) {
         </div>
       ) : filtered.length === 0 ? (
         <div className="nb-card p-10 text-center">
-          <Users size={36} className="mx-auto mb-3" style={{ color: '#aaa' }} />
+          <Users size={36} className="mx-auto mb-3" style={{ color: 'var(--muted)' }} />
           <p className="font-black text-lg mb-1">
-            {tab === 'suggestions' ? 'No suggestions yet' : tab === 'network' ? 'No connections yet' : 'No pending requests'}
+            {tab === 'suggestions' ? t('no_suggestions') : tab === 'network' ? t('no_connections') : t('requests_pending')}
           </p>
           <p className="text-sm font-bold" style={{ color: '#999' }}>
-            {tab === 'suggestions' ? 'Add more interests in your profile to find peers.' : 'Send connection requests to grow your network.'}
+            {tab === 'suggestions' ? t('add_interests_find') : t('grow_network')}
           </p>
         </div>
       ) : (
@@ -373,16 +377,16 @@ export default function NetworkPage({ user }: any) {
               <Avatar user={req.requester} size={40} />
               <div className="flex-1">
                 <p className="font-black text-sm">{req.requester?.full_name}</p>
-                <p className="text-xs font-bold" style={{ color: '#aaa' }}>wants to connect</p>
+                <p className="text-xs font-bold" style={{ color: 'var(--muted)' }}>{t('wants_to_connect')}</p>
               </div>
               <div className="flex gap-2">
                 <button onClick={() => handleRespond(req.id, 'accept')}
                   className="nb-btn nb-btn-orange px-3 py-1.5 text-xs flex items-center gap-1">
-                  <Check size={11} /> Accept
+                  <Check size={11} /> {t('accept')}
                 </button>
                 <button onClick={() => handleRespond(req.id, 'reject')}
                   className="nb-btn nb-btn-ghost px-3 py-1.5 text-xs flex items-center gap-1">
-                  <X size={11} /> Decline
+                  <X size={11} /> {t('decline')}
                 </button>
               </div>
             </div>
@@ -397,10 +401,10 @@ export default function NetworkPage({ user }: any) {
                 <div className="flex-1 min-w-0">
                   <button onClick={() => setProfileId(u.id)} className="text-left">
                     <p className="font-black text-sm">{u.full_name}</p>
-                    {u.education_level && <p className="text-xs font-bold" style={{ color: '#aaa' }}>{u.education_level}</p>}
+                    {u.education_level && <p className="text-xs font-bold" style={{ color: 'var(--muted)' }}>{u.education_level}</p>}
                     {sharedInterests.length > 0 && (
                       <p className="text-xs font-bold" style={{ color: '#FF5C00' }}>
-                        {sharedInterests.length} shared interest{sharedInterests.length > 1 ? 's' : ''}
+                        {t('shared_interests', { count: sharedInterests.length, s: sharedInterests.length > 1 ? 's' : '' })}
                       </p>
                     )}
                   </button>
@@ -409,13 +413,13 @@ export default function NetworkPage({ user }: any) {
                   {tab === 'network' ? (
                     <button onClick={() => setChatPeer(u)}
                       className="nb-btn nb-btn-navy px-3 py-1.5 text-xs flex items-center gap-1">
-                      <MessageCircle size={11} /> Chat
+                      <MessageCircle size={11} /> {t('chat')}
                     </button>
                   ) : (
                     <button onClick={() => handleConnect(u.id)}
                       disabled={connecting.has(u.id)}
                       className="nb-btn nb-btn-orange px-3 py-1.5 text-xs flex items-center gap-1 disabled:opacity-50">
-                      {connecting.has(u.id) ? 'Sent' : <><UserPlus size={11} /> Connect</>}
+                      {connecting.has(u.id) ? t('sent') : <><UserPlus size={11} /> {t('connect')}</>}
                     </button>
                   )}
                   <button onClick={() => setProfileId(u.id)}

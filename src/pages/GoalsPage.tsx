@@ -5,16 +5,7 @@ import {
   Calendar, Sparkles, TrendingUp, X, Bot, Zap
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-
-const GOAL_CATS = [
-  { id: 'scholarship',  label: 'Scholarship',  emoji: '🎓', color: '#1D4ED8', bg: '#EFF6FF' },
-  { id: 'study_abroad', label: 'Study Abroad', emoji: '✈️', color: '#065F46', bg: '#ECFDF5' },
-  { id: 'competition',  label: 'Competition',  emoji: '🏆', color: '#92400E', bg: '#FFFBEB' },
-  { id: 'internship',   label: 'Internship',   emoji: '💼', color: '#5B21B6', bg: '#F5F3FF' },
-  { id: 'job',          label: 'Job / Career', emoji: '🚀', color: '#9A3412', bg: '#FFF7ED' },
-  { id: 'skill',        label: 'Skill / Cert', emoji: '📚', color: '#0369A1', bg: '#F0F9FF' },
-  { id: 'general',      label: 'General',      emoji: '⭐', color: '#374151', bg: '#F9FAFB' },
-];
+import { useI18n } from '../lib/i18n';
 
 const EXAMPLE_GOALS = [
   'Get into Harvard on a full scholarship',
@@ -27,7 +18,7 @@ const EXAMPLE_GOALS = [
   'Study medicine in Germany',
 ];
 
-function GoalCard({ goal, onDelete, onUpdate, onAskAI }: any) {
+function GoalCard({ goal, onDelete, onUpdate, onAskAI, t, GOAL_CATS }: any) {
   const [editing,   setEditing]   = useState(false);
   const [progress,  setProgress]  = useState(goal.progress || 0);
   const [newMile,   setNewMile]   = useState('');
@@ -74,14 +65,14 @@ function GoalCard({ goal, onDelete, onUpdate, onAskAI }: any) {
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="nb-badge" style={{ color: cat.color, borderColor: cat.color, background: cat.bg }}>{cat.label}</span>
                 {goal.status === 'completed' && (
-                  <span className="nb-badge" style={{ color: '#065F46', borderColor: '#065F46', background: '#ECFDF5' }}>✓ Complete</span>
+                  <span className="nb-badge" style={{ color: '#065F46', borderColor: '#065F46', background: '#ECFDF5' }}>✓ {t('complete_status')}</span>
                 )}
               </div>
               <h3 className="font-black text-base mt-1 leading-snug">{goal.title}</h3>
-              {goal.description && <p className="text-xs font-medium mt-0.5" style={{ color: '#666' }}>{goal.description}</p>}
+              {goal.description && <p className="text-xs font-medium mt-0.5" style={{ color: 'var(--muted)' }}>{goal.description}</p>}
               {goal.target_date && (
                 <p className="text-xs font-bold mt-1 flex items-center gap-1" style={{ color: '#FF5C00' }}>
-                  <Calendar size={10} /> Target: {goal.target_date}
+                  <Calendar size={10} /> {t('target_label')}: {goal.target_date}
                 </p>
               )}
             </div>
@@ -101,7 +92,7 @@ function GoalCard({ goal, onDelete, onUpdate, onAskAI }: any) {
         {/* Progress bar */}
         <div className="mb-3">
           <div className="flex items-center justify-between mb-1">
-            <span className="text-xs font-black uppercase tracking-widest" style={{ color: '#999' }}>Progress</span>
+            <span className="text-xs font-black uppercase tracking-widest" style={{ color: '#999' }}>{t('progress_label')}</span>
             <span className="text-xs font-black" style={{ color: cat.color }}>{progress}%</span>
           </div>
           <div className="w-full h-3 rounded-full" style={{ background: '#f0ede6', border: '1.5px solid #0A0A0A' }}>
@@ -133,7 +124,7 @@ function GoalCard({ goal, onDelete, onUpdate, onAskAI }: any) {
         <div className="flex gap-2 mb-3">
           <input value={newMile} onChange={e => setNewMile(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && addMilestone()}
-            placeholder="Add a step..."
+            placeholder={t('add_step_placeholder')}
             className="nb-input text-xs py-2 flex-1" />
           <button onClick={addMilestone} disabled={!newMile.trim()}
             className="nb-btn nb-btn-ghost px-2 py-2 disabled:opacity-40">
@@ -146,13 +137,13 @@ function GoalCard({ goal, onDelete, onUpdate, onAskAI }: any) {
           <button onClick={() => onAskAI(goal)}
             className="nb-btn flex-1 py-2 text-xs flex items-center justify-center gap-1.5"
             style={{ background: '#FFF3EE', color: '#FF5C00', borderColor: '#FF5C00' }}>
-            <Sparkles size={11} /> AI Guidance
+            <Sparkles size={11} /> {t('ai_guidance_btn')}
           </button>
           {goal.status !== 'completed' && (
             <button onClick={markComplete}
               className="nb-btn flex-1 py-2 text-xs flex items-center justify-center gap-1.5"
               style={{ background: '#E8FFF0', color: '#065F46', borderColor: '#00C853' }}>
-              <Check size={11} /> Mark Done
+              <Check size={11} /> {t('mark_done_btn')}
             </button>
           )}
         </div>
@@ -161,14 +152,14 @@ function GoalCard({ goal, onDelete, onUpdate, onAskAI }: any) {
   );
 }
 
-function NewGoalModal({ onClose, onCreated }: any) {
+function NewGoalModal({ onClose, onCreated, t, GOAL_CATS, EXAMPLE_GOALS }: any) {
   const [form, setForm] = useState({ title: '', description: '', category: 'general', target_date: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }));
 
   const handleCreate = async () => {
-    if (!form.title.trim()) { setError('Goal title is required'); return; }
+    if (!form.title.trim()) { setError(t('goal_required')); return; }
     setLoading(true); setError('');
     try {
       const res = await apiRequest('/api/goals', { method: 'POST', body: JSON.stringify(form) });
@@ -187,7 +178,7 @@ function NewGoalModal({ onClose, onCreated }: any) {
       <div className="w-full sm:max-w-lg max-h-[90vh] flex flex-col rounded-t-3xl sm:rounded-2xl overflow-hidden nb-card">
         <div className="flex-shrink-0 px-5 pt-5 pb-4" style={{ borderBottom: '2px solid #f0ede6' }}>
           <div className="flex items-center justify-between">
-            <h2 className="font-black text-xl flex items-center gap-2"><Target size={18} style={{ color: '#FF5C00' }} /> Set a New Goal</h2>
+            <h2 className="font-black text-xl flex items-center gap-2"><Target size={18} style={{ color: '#FF5C00' }} /> {t('set_new_goal_title')}</h2>
             <button onClick={onClose} className="nb-btn nb-btn-ghost p-1.5"><X size={15} /></button>
           </div>
         </div>
@@ -195,13 +186,13 @@ function NewGoalModal({ onClose, onCreated }: any) {
           {error && <div className="p-3 rounded-xl font-bold text-sm" style={{ background: '#FFF0F0', border: '2px solid #E53935', color: '#E53935' }}>{error}</div>}
 
           <div>
-            <label className="block text-xs font-black uppercase tracking-widest mb-1.5" style={{ color: '#666' }}>Goal *</label>
+            <label className="block text-xs font-black uppercase tracking-widest mb-1.5" style={{ color: 'var(--muted)' }}>{t('goal')} *</label>
             <input className="nb-input" value={form.title} onChange={e => set('title', e.target.value)}
-              placeholder="e.g. Get into Harvard on a full scholarship" />
+              placeholder={t('goal_placeholder')} />
             <div className="flex flex-wrap gap-1.5 mt-2">
               {EXAMPLE_GOALS.slice(0, 4).map(eg => (
                 <button key={eg} onClick={() => set('title', eg)}
-                  className="nb-btn px-2 py-1 text-xs" style={{ background: '#fff', color: '#666' }}>
+                  className="nb-btn px-2 py-1 text-xs" style={{ background: 'var(--surface)', color: 'var(--muted)' }}>
                   {eg}
                 </button>
               ))}
@@ -209,7 +200,7 @@ function NewGoalModal({ onClose, onCreated }: any) {
           </div>
 
           <div>
-            <label className="block text-xs font-black uppercase tracking-widest mb-1.5" style={{ color: '#666' }}>Category</label>
+            <label className="block text-xs font-black uppercase tracking-widest mb-1.5" style={{ color: 'var(--muted)' }}>{t('category')}</label>
             <div className="grid grid-cols-4 gap-2">
               {GOAL_CATS.map(c => (
                 <button key={c.id} onClick={() => set('category', c.id)}
@@ -228,13 +219,13 @@ function NewGoalModal({ onClose, onCreated }: any) {
           </div>
 
           <div>
-            <label className="block text-xs font-black uppercase tracking-widest mb-1.5" style={{ color: '#666' }}>Description (optional)</label>
+            <label className="block text-xs font-black uppercase tracking-widest mb-1.5" style={{ color: 'var(--muted)' }}>{t('description')} ({t('optional')})</label>
             <textarea className="nb-input resize-none" rows={2} value={form.description} onChange={e => set('description', e.target.value)}
-              placeholder="Any additional context about this goal..." />
+              placeholder={t('any_context_placeholder')} />
           </div>
 
           <div>
-            <label className="block text-xs font-black uppercase tracking-widest mb-1.5" style={{ color: '#666' }}>Target Date (optional)</label>
+            <label className="block text-xs font-black uppercase tracking-widest mb-1.5" style={{ color: 'var(--muted)' }}>{t('target_date_optional')}</label>
             <input className="nb-input" type="text" value={form.target_date} onChange={e => set('target_date', e.target.value)}
               placeholder="e.g. December 2026, March 31 2026" />
           </div>
@@ -242,7 +233,7 @@ function NewGoalModal({ onClose, onCreated }: any) {
         <div className="flex-shrink-0 px-5 py-4" style={{ borderTop: '2px solid #f0ede6' }}>
           <button onClick={handleCreate} disabled={loading || !form.title.trim()}
             className="nb-btn nb-btn-orange w-full py-3 text-sm disabled:opacity-40 flex items-center justify-center gap-2">
-            {loading ? <><RefreshCw size={14} className="animate-spin" /> Creating...</> : <><Zap size={14} /> Set Goal & Get AI Plan</>}
+            {loading ? <><RefreshCw size={14} className="animate-spin" /> {t('creating_btn')}</> : <><Zap size={14} /> {t('set_goal_ai_plan_btn')}</>}
           </button>
         </div>
       </div>
@@ -251,6 +242,18 @@ function NewGoalModal({ onClose, onCreated }: any) {
 }
 
 export default function GoalsPage({ user }: any) {
+  const { t } = useI18n();
+
+  const GOAL_CATS = [
+    { id: 'scholarship',  label: t('goal_cat_scholarship'),  emoji: '🎓', color: '#1D4ED8', bg: '#EFF6FF' },
+    { id: 'study_abroad', label: t('goal_cat_study_abroad'), emoji: '✈️', color: '#065F46', bg: '#ECFDF5' },
+    { id: 'competition',  label: t('goal_cat_competition'),  emoji: '🏆', color: '#92400E', bg: '#FFFBEB' },
+    { id: 'internship',   label: t('goal_cat_internship'),   emoji: '💼', color: '#5B21B6', bg: '#F5F3FF' },
+    { id: 'job',          label: t('goal_cat_job'),          emoji: '🚀', color: '#9A3412', bg: '#FFF7ED' },
+    { id: 'skill',        label: t('goal_cat_skill'),        emoji: '📚', color: '#0369A1', bg: '#F0F9FF' },
+    { id: 'general',      label: t('goal_cat_general'),      emoji: '⭐', color: '#374151', bg: '#F9FAFB' },
+  ];
+
   const navigate = useNavigate();
   const [goals,   setGoals]   = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -282,32 +285,32 @@ export default function GoalsPage({ user }: any) {
       <div className="nb-card nb-card-navy p-5 mb-5">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-white font-black text-2xl flex items-center gap-2"><Target size={22} style={{ color: '#FF5C00' }} /> My Goals</h1>
+            <h1 className="text-white font-black text-2xl flex items-center gap-2"><Target size={22} style={{ color: '#FF5C00' }} /> {t('my_goals')}</h1>
             <p className="font-bold text-sm mt-0.5" style={{ color: '#FFD600' }}>
-              {active.length} active · {completed.length} completed
+              {t('active_goals_count', { n: active.length })} · {t('completed_goals_count', { n: completed.length })}
             </p>
           </div>
           <button onClick={() => setShowNew(true)}
             className="nb-btn nb-btn-orange px-4 py-2.5 text-sm flex items-center gap-2">
-            <Plus size={14} /> New Goal
+            <Plus size={14} /> {t('new_goal_btn')}
           </button>
         </div>
 
         {active.length === 0 && completed.length === 0 && (
           <div className="mt-4 p-4 rounded-xl text-center" style={{ background: 'rgba(255,255,255,0.08)' }}>
-            <p className="text-white font-bold text-sm">No goals set yet.</p>
-            <p className="text-xs font-bold mt-1" style={{ color: '#aaa' }}>Set your first goal and get an AI-powered action plan instantly.</p>
+            <p className="text-white font-bold text-sm">{t('no_goals_yet')}</p>
+            <p className="text-xs font-bold mt-1" style={{ color: 'var(--muted)' }}>{t('set_first_goal_plan')}</p>
           </div>
         )}
       </div>
 
       {/* Tabs */}
       <div className="flex gap-2 mb-5">
-        {(['active', 'completed'] as const).map(t => (
-          <button key={t} onClick={() => setTab(t)}
+        {(['active', 'completed'] as const).map(tabKey => (
+          <button key={tabKey} onClick={() => setTab(tabKey)}
             className="nb-btn px-4 py-2 text-sm capitalize"
-            style={tab === t ? { background: '#FF5C00', color: '#fff', borderColor: '#FF5C00' } : { background: '#fff' }}>
-            {t} ({t === 'active' ? active.length : completed.length})
+            style={tab === tabKey ? { background: '#FF5C00', color: '#fff', borderColor: '#FF5C00' } : { background: 'var(--surface)' }}>
+            {tabKey === 'active' ? t('active_tab') : t('completed_tab')} ({tabKey === 'active' ? active.length : completed.length})
           </button>
         ))}
       </div>
@@ -320,13 +323,13 @@ export default function GoalsPage({ user }: any) {
       ) : displayed.length === 0 ? (
         <div className="nb-card p-10 text-center">
           <div className="text-4xl mb-3">{tab === 'active' ? '🎯' : '🏆'}</div>
-          <h3 className="font-black text-lg mb-1">{tab === 'active' ? 'No active goals' : 'No completed goals yet'}</h3>
+          <h3 className="font-black text-lg mb-1">{tab === 'active' ? t('no_active_goals') : t('no_completed_goals')}</h3>
           <p className="text-sm font-bold" style={{ color: '#999' }}>
-            {tab === 'active' ? 'Set a goal to get your personalized AI action plan.' : 'Complete your active goals to see them here.'}
+            {tab === 'active' ? t('set_first_goal_plan') : t('no_completed_goals')}
           </p>
           {tab === 'active' && (
             <button onClick={() => setShowNew(true)} className="nb-btn nb-btn-orange px-5 py-2.5 text-sm mt-4">
-              <Plus size={14} className="inline mr-1" /> Set First Goal
+              <Plus size={14} className="inline mr-1" /> {t('new_goal_btn')}
             </button>
           )}
         </div>
@@ -337,6 +340,8 @@ export default function GoalsPage({ user }: any) {
               onDelete={handleDelete}
               onUpdate={(updated: any) => setGoals(prev => prev.map(g => g.id === updated.id ? updated : g))}
               onAskAI={handleAskAI}
+              t={t}
+              GOAL_CATS={GOAL_CATS}
             />
           ))}
         </div>
@@ -346,6 +351,9 @@ export default function GoalsPage({ user }: any) {
         <NewGoalModal
           onClose={() => setShowNew(false)}
           onCreated={(g: any) => { setGoals(prev => [g, ...prev]); }}
+          t={t}
+          GOAL_CATS={GOAL_CATS}
+          EXAMPLE_GOALS={EXAMPLE_GOALS}
         />
       )}
     </div>

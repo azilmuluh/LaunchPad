@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { apiRequest } from '../lib/auth';
 import { X, Map, RefreshCw, Copy, Check } from 'lucide-react';
+import { useI18n } from '../lib/i18n';
 
 function MarkdownRenderer({ content }: { content: string }) {
   const lines = content.split('\n');
@@ -9,6 +10,7 @@ function MarkdownRenderer({ content }: { content: string }) {
 
   while (i < lines.length) {
     const line = lines[i];
+    if (line.includes('<roadmap_json>') || line.includes('</roadmap_json>')) { i++; continue; }
 
     if (line.startsWith('## ')) {
       elements.push(
@@ -60,9 +62,12 @@ function MarkdownRenderer({ content }: { content: string }) {
 }
 
 export default function RoadmapModal({ opportunity, user, onClose }) {
+  const { t } = useI18n();
   const [content, setContent] = useState('');
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
   const [error, setError] = useState('');
   const bottomRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -122,9 +127,40 @@ export default function RoadmapModal({ opportunity, user, onClose }) {
   };
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(content);
+    // Strip JSON tag for copying
+    const clean = content.replace(/<roadmap_json>[\s\S]*?<\/roadmap_json>/g, '').trim();
+    navigator.clipboard.writeText(clean);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const saveToGoals = async () => {
+    const match = content.match(/<roadmap_json>([\s\S]*?)<\/roadmap_json>/);
+    if (!match) return alert(t('error')); // Use t('error') or similar if needed, or keep generic for now
+    
+    setSaving(true);
+    try {
+      let steps = JSON.parse(match[1]);
+      const res = await apiRequest('/api/goals', {
+        method: 'POST',
+        body: JSON.stringify({
+          title: `Goal: ${opportunity.title}`,
+          description: `Roadmap for ${opportunity.title}`,
+          category: opportunity.category || 'opportunity',
+          target_date: opportunity.deadline || new Date(Date.now() + 30*86400000).toISOString().split('T')[0],
+          milestones: steps.map((s: string) => ({ text: s, completed: false }))
+        })
+      });
+      if (res.ok) {
+        setSaved(true);
+        setTimeout(() => setSaved(false), 3000);
+      }
+    } catch (e) {
+      console.error(e);
+      alert('Failed to save goals.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const CATEGORY_CONFIG = {
@@ -154,12 +190,12 @@ export default function RoadmapModal({ opportunity, user, onClose }) {
                 🗺️
               </div>
               <div>
-                <p className="text-xs font-bold uppercase tracking-widest mb-0.5" style={{ color: '#F97316' }}>AI-Generated Roadmap</p>
+                <p className="text-xs font-bold uppercase tracking-widest mb-0.5" style={{ color: '#F97316' }}>{t('ai_roadmap')}</p>
                 <h2 className="text-white font-bold text-sm leading-snug">{opportunity.title}</h2>
                 <div className="flex items-center gap-2 mt-1">
-                  <span className="text-xs" style={{ color: catConf.color }}>{catConf.emoji} {opportunity.category}</span>
+                  <span className="text-xs" style={{ color: catConf.color }}>{catConf.emoji} {t(opportunity.category || 'opportunity')}</span>
                   {opportunity.deadline && (
-                    <span className="text-xs" style={{ color: '#fbbf24' }}>⏰ Due: {opportunity.deadline}</span>
+                    <span className="text-xs" style={{ color: '#fbbf24' }}>⏰ {t('due')}: {opportunity.deadline}</span>
                   )}
                 </div>
               </div>
@@ -169,14 +205,21 @@ export default function RoadmapModal({ opportunity, user, onClose }) {
                 <button onClick={handleCopy}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all hover:opacity-80"
                   style={{ background: 'rgba(255,255,255,0.08)', color: '#93c5fd', border: '1px solid rgba(255,255,255,0.12)' }}>
-                  {copied ? <><Check size={11} /> Copied</> : <><Copy size={11} /> Copy</>}
+                  {copied ? <><Check size={11} /> {t('copied')}</> : <><Copy size={11} /> {t('copy')}</>}
+                </button>
+              )}
+              {!loading && (
+                <button onClick={saveToGoals} disabled={saving || saved}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all hover:opacity-80 disabled:opacity-50"
+                  style={{ background: 'rgba(52,211,153,0.15)', color: '#34d399', border: '1px solid rgba(52,211,153,0.3)' }}>
+                  {saving ? t('saving') : saved ? `✓ ${t('saved')}` : <><RefreshCw size={11} className={saving ? 'animate-spin' : ''} /> {t('save_checklist')}</>}
                 </button>
               )}
               {!loading && (
                 <button onClick={generateRoadmap}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all hover:opacity-80"
                   style={{ background: 'rgba(249,115,22,0.12)', color: '#F97316', border: '1px solid rgba(249,115,22,0.25)' }}>
-                  <RefreshCw size={11} /> Regenerate
+                  <RefreshCw size={11} /> {t('regenerate')}
                 </button>
               )}
               <button onClick={onClose}
@@ -197,8 +240,8 @@ export default function RoadmapModal({ opportunity, user, onClose }) {
                 <div className="absolute inset-0 flex items-center justify-center text-xl">🤖</div>
               </div>
               <div className="text-center">
-                <p className="text-white font-semibold mb-1">Generating your roadmap...</p>
-                <p className="text-blue-400 text-sm">AI is analyzing this opportunity and your profile</p>
+                <p className="text-white font-semibold mb-1">{t('generating_roadmap')}</p>
+                <p className="text-blue-400 text-sm">{t('analyzing_profile')}</p>
               </div>
             </div>
           ) : error ? (
@@ -218,7 +261,7 @@ export default function RoadmapModal({ opportunity, user, onClose }) {
               {loading && (
                 <div className="flex items-center gap-2 mt-3" style={{ color: '#F97316' }}>
                   <div className="w-4 h-4 rounded-full border-2 border-orange-500 border-t-transparent animate-spin" />
-                  <span className="text-xs">Writing...</span>
+                  <span className="text-xs">{t('writing')}</span>
                 </div>
               )}
               <div ref={bottomRef} />
@@ -232,7 +275,7 @@ export default function RoadmapModal({ opportunity, user, onClose }) {
             <a href={opportunity.link} target="_blank" rel="noopener noreferrer"
               className="flex items-center justify-center gap-2 w-full py-3 rounded-xl text-sm font-bold transition-all hover:opacity-90"
               style={{ background: 'linear-gradient(135deg, #F97316, #ea6c0a)', color: 'white' }}>
-              Apply Now — {opportunity.title} <span>→</span>
+              {t('apply_now')} — {opportunity.title} <span>→</span>
             </a>
           </div>
         )}

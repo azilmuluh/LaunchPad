@@ -54,12 +54,12 @@ export default function BadgeToast() {
       }}
     >
       <div className="nb-card flex items-center gap-4 px-5 py-4"
-        style={{ background: '#0B1E3D', borderColor: '#FFD600', boxShadow: '4px 4px 0 #FFD600', minWidth: '280px', maxWidth: '360px' }}>
+        style={{ background: 'var(--surface)', borderColor: '#FFD600', boxShadow: '4px 4px 0 #FFD600', minWidth: '280px', maxWidth: '360px' }}>
         <div className="text-4xl badge-pop flex-shrink-0">{current.icon}</div>
         <div>
           <p className="text-xs font-black uppercase tracking-widest" style={{ color: '#FFD600' }}>New Badge Unlocked!</p>
           <p className="text-white font-black text-base leading-tight">{current.label}</p>
-          <p className="text-xs font-bold mt-0.5" style={{ color: '#aaa' }}>{current.desc}</p>
+          <p className="text-xs font-bold mt-0.5" style={{ color: 'var(--muted)' }}>{current.desc}</p>
           <p className="text-xs font-black mt-1" style={{ color: '#FF5C00' }}>+{current.xp} XP</p>
         </div>
       </div>

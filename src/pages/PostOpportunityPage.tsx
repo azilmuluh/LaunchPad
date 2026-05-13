@@ -2,9 +2,10 @@ import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiRequest } from '../lib/auth';
 import OpportunityCard from '../components/OpportunityCard';
+import { useI18n } from '../lib/i18n';
 import {
   Shield, Sparkles, AlertCircle, ArrowLeft, Loader2,
-  Eye, EyeOff, Upload, Image, Wand2, X, Check
+  Eye, EyeOff, Upload, Image as ImageIcon, Wand2, X, Check
 } from 'lucide-react';
 
 const CATEGORIES = [
@@ -26,6 +27,7 @@ const FIELD = 'nb-input w-full';
 const LBL   = 'block text-xs font-black uppercase tracking-widest mb-1.5';
 
 export default function PostOpportunityPage({ user }: any) {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const [preview, setPreview]       = useState(false);
   const [loading, setLoading]       = useState(false);
@@ -61,28 +63,63 @@ export default function PostOpportunityPage({ user }: any) {
   // ── Flyer parsing ────────────────────────────────────────────────
   const handleFlyerFile = async (file: File) => {
     if (!file) return;
-    // Store preview
-    const reader = new FileReader();
-    reader.onload = e => setFlyerImg(e.target?.result as string);
-    reader.readAsDataURL(file);
-    // Also read as text for PDF/doc
-    const textReader = new FileReader();
-    textReader.onload = e => setFlyerText(e.target?.result as string || '');
-    textReader.readAsText(file);
+    const isImage = file.type.startsWith('image/');
+    
+    if (isImage) {
+      // Compress/Resize image before sending
+      const reader = new FileReader();
+      reader.onload = e => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          // Max 600px width/height for efficiency and to avoid 413 error
+          const MAX = 600;
+          if (width > height && width > MAX) { height *= MAX / width; width = MAX; }
+          else if (height > MAX) { width *= MAX / height; height = MAX; }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+          const compressed = canvas.toDataURL('image/jpeg', 0.6);
+          setFlyerImg(compressed);
+          setFlyerText('');
+        };
+        img.src = e.target?.result as string;
+      };
+      reader.readAsDataURL(file);
+    } else {
+      const textReader = new FileReader();
+      textReader.onload = e => {
+        setFlyerText(e.target?.result as string || '');
+        setFlyerImg(null);
+      };
+      textReader.readAsText(file);
+    }
   };
 
   const parseFlyer = async () => {
     setFlyerParsing(true); setError('');
     try {
-      const res = await apiRequest('/api/flyer-parse', {
+      const response = await apiRequest('/api/flyer-parse', {
         method: 'POST',
         body: JSON.stringify({
           image_base64: flyerImg,
           image_text: flyerText || (flyerImg ? 'Image flyer provided' : ''),
         }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
+      
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        console.error('Server returned non-JSON:', text);
+        throw new Error(`Server error (${response.status}): Expected JSON but got ${contentType || 'nothing'}`);
+      }
+      
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Failed to parse flyer');
+      
       // Fill form with parsed data
       setForm(prev => ({
         ...prev,
@@ -97,9 +134,12 @@ export default function PostOpportunityPage({ user }: any) {
         benefits:    data.benefits    || prev.benefits,
         tag:         data.tag         || prev.tag,
       }));
-      setFlyerMode(false); // Switch to edit mode
+      setFlyerMode(false);
       setPreview(false);
-    } catch (e: any) { setError(e.message); }
+    } catch (e: any) { 
+      console.error('Flyer parsing error:', e);
+      setError(e.message); 
+    }
     setFlyerParsing(false);
   };
 
@@ -130,20 +170,20 @@ export default function PostOpportunityPage({ user }: any) {
               style={{ background: success.verified ? '#E8FFF0' : '#FFFBEB', border: `3px solid ${success.verified ? '#00C853' : '#FFD600'}`, boxShadow: `3px 3px 0 ${success.verified ? '#00C853' : '#FFD600'}` }}>
               {success.verified ? <Shield size={28} style={{ color: '#00C853' }} /> : <AlertCircle size={28} style={{ color: '#D97706' }} />}
             </div>
-            <h2 className="font-black text-xl mb-1">{success.verified ? 'Verified & Live!' : 'Posted — Pending Review'}</h2>
+            <h2 className="font-black text-xl mb-1">{success.verified ? t('verified_live') : t('pending_review')}</h2>
             <p className="text-sm font-bold mb-4" style={{ color: success.verified ? '#00C853' : '#D97706' }}>
-              {success.verified ? 'AI confirmed as a legitimate opportunity' : 'Will be reviewed shortly'}
+              {success.verified ? t('ai_confirmed') : t('will_review')}
             </p>
             <div className="p-3 rounded-xl mb-2" style={{ background: '#E8FFF0', border: '2px solid #00C853' }}>
-              <p className="text-xs font-black" style={{ color: '#065F46' }}>+50 XP earned for posting!</p>
+              <p className="text-xs font-black" style={{ color: '#065F46' }}>{t('xp_earned')}</p>
             </div>
           </div>
-          <p className="text-xs font-black text-center mb-3" style={{ color: '#aaa' }}>YOUR OPPORTUNITY CARD</p>
+          <p className="text-xs font-black text-center mb-3" style={{ color: 'var(--muted)' }}>{t('your_card')}</p>
           <OpportunityCard item={{ ...success, verified: success.verified }} user={user} isBookmarked={false} onBookmark={() => {}} />
           <div className="flex gap-3 mt-5">
-            <button onClick={() => navigate('/feed')} className="flex-1 nb-btn nb-btn-ghost py-3 text-sm">View in Feed</button>
+            <button onClick={() => navigate('/feed')} className="flex-1 nb-btn nb-btn-ghost py-3 text-sm">{t('view_feed')}</button>
             <button onClick={() => { setSuccess(null); setForm({ title:'',category:'',source:'',location:'',deadline:'',link:'',description:'',eligibility:'',benefits:'',tag:'' }); setFlyerImg(null); setFlyerText(''); }}
-              className="flex-1 nb-btn nb-btn-orange py-3 text-sm">Post Another</button>
+              className="flex-1 nb-btn nb-btn-orange py-3 text-sm">{t('post_another')}</button>
           </div>
         </div>
       </div>
@@ -155,29 +195,29 @@ export default function PostOpportunityPage({ user }: any) {
       <div className="max-w-2xl mx-auto px-4 py-8">
         <button onClick={() => navigate('/feed')}
           className="flex items-center gap-2 text-sm font-bold mb-5 hover:opacity-70 transition-opacity"
-          style={{ color: '#666' }}>
-          <ArrowLeft size={14} /> Back
+          style={{ color: 'var(--muted)' }}>
+          <ArrowLeft size={14} /> {t('back')}
         </button>
 
         <div className="flex items-start justify-between mb-6">
           <div>
-            <h1 className="font-black text-2xl mb-1">Share an Opportunity</h1>
-            <p className="text-sm font-bold" style={{ color: '#666' }}>
-              Help the community. <span className="font-black" style={{ color: '#FF5C00' }}>Earn +50 XP!</span>
+            <h1 className="font-black text-2xl mb-1">{t('share_opportunity')}</h1>
+            <p className="text-sm font-bold" style={{ color: 'var(--muted)' }}>
+              {t('help_community')} <span className="font-black" style={{ color: '#FF5C00' }}>{t('earn_xp')}</span>
             </p>
           </div>
           <div className="flex items-center gap-2">
             <button onClick={() => setFlyerMode(m => !m)}
               className="nb-btn px-3 py-2 text-xs font-bold flex items-center gap-1.5"
-              style={flyerMode ? { background: '#0B1E3D', color: '#FFD600' } : { background: '#fff' }}>
-              <Wand2 size={12} /> AI Flyer
+              style={flyerMode ? { background: 'var(--surface)', color: '#FFD600' } : { background: 'var(--surface)' }}>
+              <Wand2 size={12} /> {t('ai_flyer')}
             </button>
             {!flyerMode && (
               <button onClick={() => setPreview(p => !p)}
                 className="nb-btn px-3 py-2 text-xs font-bold flex items-center gap-1.5"
-                style={preview ? { background: '#FF5C00', color: '#fff' } : { background: '#fff' }}>
+                style={preview ? { background: '#FF5C00', color: '#fff' } : { background: 'var(--surface)' }}>
                 {preview ? <EyeOff size={12} /> : <Eye size={12} />}
-                {preview ? 'Edit' : 'Preview'}
+                {preview ? t('edit') : t('preview')}
               </button>
             )}
           </div>
@@ -189,9 +229,9 @@ export default function PostOpportunityPage({ user }: any) {
             <div className="nb-card p-4" style={{ background: '#FFF3EE', borderColor: '#FF5C00' }}>
               <div className="flex items-center gap-2 mb-2">
                 <Wand2 size={16} style={{ color: '#FF5C00' }} />
-                <p className="font-black text-sm" style={{ color: '#FF5C00' }}>AI Flyer Parser</p>
+                <p className="font-black text-sm" style={{ color: '#FF5C00' }}>{t('flyer_parser')}</p>
               </div>
-              <p className="text-xs font-bold" style={{ color: '#666' }}>Upload a flyer image or document and our AI will automatically extract all opportunity details for you to review and edit.</p>
+              <p className="text-xs font-bold" style={{ color: 'var(--muted)' }}>{t('flyer_desc')}</p>
             </div>
 
             <div
@@ -207,14 +247,14 @@ export default function PostOpportunityPage({ user }: any) {
               {flyerImg ? (
                 <>
                   <img src={flyerImg} alt="Flyer preview" className="max-h-48 mx-auto rounded-xl mb-3 object-contain" style={{ border: '2px solid #0A0A0A' }} />
-                  <p className="font-black text-sm">Flyer loaded</p>
-                  <p className="text-xs font-bold mt-1" style={{ color: '#00C853' }}>Ready to parse</p>
+                  <p className="font-black text-sm">{t('flyer_loaded')}</p>
+                  <p className="text-xs font-bold mt-1" style={{ color: '#00C853' }}>{t('ready_parse')}</p>
                 </>
               ) : (
                 <>
-                  <Image size={40} className="mx-auto mb-3" style={{ color: '#aaa' }} />
-                  <p className="font-black">Drop flyer here or click to upload</p>
-                  <p className="text-xs font-bold mt-1" style={{ color: '#aaa' }}>PNG, JPG, PDF, TXT, DOC</p>
+                  <ImageIcon size={40} className="mx-auto mb-3" style={{ color: 'var(--muted)' }} />
+                  <p className="font-black">{t('drop_flyer')}</p>
+                  <p className="text-xs font-bold mt-1" style={{ color: 'var(--muted)' }}>PNG, JPG, PDF, TXT, DOC</p>
                 </>
               )}
             </div>
@@ -223,11 +263,11 @@ export default function PostOpportunityPage({ user }: any) {
               <div className="flex gap-3">
                 <button onClick={() => { setFlyerImg(null); setFlyerText(''); }}
                   className="nb-btn nb-btn-ghost flex-1 py-2.5 text-sm flex items-center justify-center gap-2">
-                  <X size={14} /> Remove
+                  <X size={14} /> {t('remove')}
                 </button>
                 <button onClick={parseFlyer} disabled={flyerParsing}
                   className="nb-btn nb-btn-orange flex-1 py-2.5 text-sm flex items-center justify-center gap-2 disabled:opacity-40">
-                  {flyerParsing ? <><Loader2 size={14} className="animate-spin" /> Parsing...</> : <><Wand2 size={14} /> Parse with AI</>}
+                  {flyerParsing ? <><Loader2 size={14} className="animate-spin" /> {t('parsing')}</> : <><Wand2 size={14} /> {t('parse_ai')}</>}
                 </button>
               </div>
             )}
@@ -240,7 +280,7 @@ export default function PostOpportunityPage({ user }: any) {
             )}
 
             <button onClick={() => setFlyerMode(false)} className="w-full nb-btn nb-btn-ghost py-2.5 text-sm">
-              Fill manually instead
+              {t('fill_manually')}
             </button>
           </div>
         )}
@@ -250,11 +290,11 @@ export default function PostOpportunityPage({ user }: any) {
           <div>
             {form.title && (
               <>
-                <p className="text-xs font-black text-center mb-3" style={{ color: '#aaa' }}>LIVE CARD PREVIEW</p>
+                <p className="text-xs font-black text-center mb-3" style={{ color: 'var(--muted)' }}>{t('live_preview')}</p>
                 <OpportunityCard item={previewItem} user={user} isBookmarked={false} onBookmark={() => {}} />
               </>
             )}
-            <button onClick={() => setPreview(false)} className="w-full mt-4 nb-btn nb-btn-ghost py-3 text-sm">Back to Editing</button>
+            <button onClick={() => setPreview(false)} className="w-full mt-4 nb-btn nb-btn-ghost py-3 text-sm">{t('back_editing')}</button>
           </div>
         )}
 
@@ -264,13 +304,13 @@ export default function PostOpportunityPage({ user }: any) {
             {flyerImg && (
               <div className="nb-card p-3 flex items-center gap-3" style={{ background: '#E8FFF0', borderColor: '#00C853' }}>
                 <Check size={14} style={{ color: '#00C853' }} />
-                <p className="text-xs font-bold" style={{ color: '#065F46' }}>Flyer parsed! Review and edit the fields below, then submit.</p>
-                <button onClick={() => setFlyerMode(true)} className="ml-auto nb-btn nb-btn-ghost px-2 py-1 text-xs">Re-parse</button>
+                <p className="text-xs font-bold" style={{ color: '#065F46' }}>{t('flyer_parsed')}</p>
+                <button onClick={() => setFlyerMode(true)} className="ml-auto nb-btn nb-btn-ghost px-2 py-1 text-xs">{t('re_parse')}</button>
               </div>
             )}
 
             <div>
-              <label className={LBL} style={{ color: '#666' }}>Category <span style={{ color: '#FF5C00' }}>*</span></label>
+              <label className={LBL} style={{ color: 'var(--muted)' }}>{t('category')} <span style={{ color: '#FF5C00' }}>*</span></label>
               <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
                 {CATEGORIES.map(c => (
                   <button key={c.id} onClick={() => set('category', c.id)}
@@ -282,14 +322,14 @@ export default function PostOpportunityPage({ user }: any) {
                       color: form.category === c.id ? '#FF5C00' : 'var(--ink)',
                     }}>
                     <span className="text-xl">{c.emoji}</span>
-                    <span style={{ fontSize: '10px' }}>{c.label}</span>
+                    <span style={{ fontSize: '10px' }}>{t(c.id as any)}</span>
                   </button>
                 ))}
               </div>
             </div>
 
             <div>
-              <label className={LBL} style={{ color: '#666' }}>Title <span style={{ color: '#FF5C00' }}>*</span></label>
+              <label className={LBL} style={{ color: 'var(--muted)' }}>{t('title')} <span style={{ color: '#FF5C00' }}>*</span></label>
               <input type="text" value={form.title} onChange={e => set('title', e.target.value)}
                 placeholder="e.g. MasterCard Foundation Scholars Program 2026"
                 className={FIELD} style={fStyle('title')} {...fp('title')} />
@@ -297,25 +337,25 @@ export default function PostOpportunityPage({ user }: any) {
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className={LBL} style={{ color: '#666' }}>Organization</label>
+                <label className={LBL} style={{ color: 'var(--muted)' }}>{t('organization')}</label>
                 <input type="text" value={form.source} onChange={e => set('source', e.target.value)}
                   placeholder="e.g. MasterCard Foundation" className={FIELD} style={fStyle('source')} {...fp('source')} />
               </div>
               <div>
-                <label className={LBL} style={{ color: '#666' }}>Location</label>
+                <label className={LBL} style={{ color: 'var(--muted)' }}>{t('location')}</label>
                 <input type="text" value={form.location} onChange={e => set('location', e.target.value)}
-                  placeholder="Online / Yaound\u00e9" className={FIELD} style={fStyle('location')} {...fp('location')} />
+                  placeholder="Online / Yaoundé" className={FIELD} style={fStyle('location')} {...fp('location')} />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className={LBL} style={{ color: '#666' }}>Deadline</label>
+                <label className={LBL} style={{ color: 'var(--muted)' }}>{t('deadline')}</label>
                 <input type="text" value={form.deadline} onChange={e => set('deadline', e.target.value)}
                   placeholder="March 31, 2026" className={FIELD} style={fStyle('deadline')} {...fp('deadline')} />
               </div>
               <div>
-                <label className={LBL} style={{ color: '#666' }}>Application Link</label>
+                <label className={LBL} style={{ color: 'var(--muted)' }}>{t('app_link')}</label>
                 <input type="url" value={form.link} onChange={e => set('link', e.target.value)}
                   placeholder="https://apply.example.com" className={FIELD}
                   style={{ ...fStyle('link'), ...(form.link && !linkValid ? { borderColor: '#E53935' } : form.link && linkValid ? { borderColor: '#00C853' } : {}) }}
@@ -324,36 +364,36 @@ export default function PostOpportunityPage({ user }: any) {
             </div>
 
             <div>
-              <label className={LBL} style={{ color: '#666' }}>Description <span style={{ color: '#FF5C00' }}>*</span></label>
+              <label className={LBL} style={{ color: 'var(--muted)' }}>{t('description')} <span style={{ color: '#FF5C00' }}>*</span></label>
               <textarea value={form.description} onChange={e => set('description', e.target.value)}
-                placeholder="Describe the opportunity..."
+                placeholder={t('description') + '...'}
                 rows={5} className={`${FIELD} resize-none leading-relaxed`} style={fStyle('description')} {...fp('description')} />
               <div className="flex justify-end mt-1">
-                <span className="text-xs font-bold" style={{ color: form.description.length >= 30 ? '#00C853' : '#aaa' }}>{form.description.length} chars</span>
+                <span className="text-xs font-bold" style={{ color: form.description.length >= 30 ? '#00C853' : '#aaa' }}>{form.description.length} {t('chars')}</span>
               </div>
             </div>
 
             <div>
-              <label className={LBL} style={{ color: '#666' }}>Eligibility <span className="normal-case font-normal" style={{ color: '#aaa' }}>(separate with &bull;)</span></label>
+              <label className={LBL} style={{ color: 'var(--muted)' }}>{t('eligibility')} <span className="normal-case font-normal" style={{ color: 'var(--muted)' }}>({t('separate_bullet')})</span></label>
               <textarea value={form.eligibility} onChange={e => set('eligibility', e.target.value)}
-                placeholder="Age 18-30 \u2022 African national \u2022 Bachelor's degree" rows={3}
+                placeholder="Age 18-30 • African national • Bachelor's degree" rows={3}
                 className={`${FIELD} resize-none`} style={fStyle('eligibility')} {...fp('eligibility')} />
             </div>
 
             <div>
-              <label className={LBL} style={{ color: '#666' }}>Benefits <span className="normal-case font-normal" style={{ color: '#aaa' }}>(separate with &bull;)</span></label>
+              <label className={LBL} style={{ color: 'var(--muted)' }}>{t('benefits')} <span className="normal-case font-normal" style={{ color: 'var(--muted)' }}>({t('separate_bullet')})</span></label>
               <textarea value={form.benefits} onChange={e => set('benefits', e.target.value)}
-                placeholder="Full tuition \u2022 Monthly stipend \u2022 Return airfare" rows={3}
+                placeholder="Full tuition • Monthly stipend • Return airfare" rows={3}
                 className={`${FIELD} resize-none`} style={fStyle('benefits')} {...fp('benefits')} />
             </div>
 
             <div>
-              <label className={LBL} style={{ color: '#666' }}>Tag</label>
+              <label className={LBL} style={{ color: 'var(--muted)' }}>{t('tag')}</label>
               <div className="flex flex-wrap gap-1.5">
                 {TAGS.map(t => (
                   <button key={t} onClick={() => set('tag', form.tag === t ? '' : t)}
                     className="nb-btn px-2.5 py-1 text-xs capitalize"
-                    style={form.tag === t ? { background: '#FF5C00', color: '#fff', borderColor: '#FF5C00' } : { background: 'var(--surface)', color: '#666' }}>
+                    style={form.tag === t ? { background: '#FF5C00', color: '#fff', borderColor: '#FF5C00' } : { background: 'var(--surface)', color: 'var(--muted)' }}>
                     {t.replace(/_/g, ' ')}
                   </button>
                 ))}
@@ -362,7 +402,7 @@ export default function PostOpportunityPage({ user }: any) {
 
             <div className="flex items-start gap-3 p-3 rounded-xl" style={{ background: '#E8FFF0', border: '2px solid #00C853' }}>
               <Shield size={14} style={{ color: '#00C853', marginTop: '1px', flexShrink: 0 }} />
-              <p className="text-xs font-bold" style={{ color: '#065F46' }}>Automatically verified by NVIDIA AI before going live.</p>
+              <p className="text-xs font-bold" style={{ color: '#065F46' }}>{t('ai_verified')}</p>
             </div>
 
             {error && (
@@ -374,7 +414,7 @@ export default function PostOpportunityPage({ user }: any) {
 
             <button onClick={handleSubmit} disabled={!isValid || loading || (!!form.link && !linkValid)}
               className="w-full nb-btn nb-btn-orange py-3.5 text-sm flex items-center justify-center gap-2 disabled:opacity-30">
-              {loading ? <><Loader2 size={15} className="animate-spin" /> Verifying...</> : <><Sparkles size={14} /> Post Opportunity</>}
+              {loading ? <><Loader2 size={15} className="animate-spin" /> {t('verifying')}</> : <><Sparkles size={14} /> {t('post_opportunity')}</>}
             </button>
           </div>
         )}

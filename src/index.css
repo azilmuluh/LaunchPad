@@ -2,19 +2,23 @@
 
 /* CSS variables for theme switching */
 :root {
-  --bg:      #F5F0E8;
-  --surface: #FFFDF7;
-  --ink:     #0A0A0A;
+  --bg:      #FFFDF7; /* Off-white for light mode */
+  --surface: #F5F0E8; /* Beige for cards in light mode */
+  --ink:     #0A0A0A; /* Black text */
+  --heading: #0A0A0A; /* Black headings on off-white */
   --border:  #0A0A0A;
   --muted:   #666666;
+  --navy:    #0B1E3D;
 }
 
 [data-theme="dark"] {
-  --bg:      #0A0F1A;
-  --surface: #0F1B2D;
-  --ink:     #F0EDE6;
-  --border:  #1E3A5F;
-  --muted:   #64748b;
+  --bg:      #0B1E3D; /* Navy background for dark mode */
+  --surface: #152A4D; /* Darker navy for cards in dark mode */
+  --ink:     #F5F0E8; /* Beige/White text in dark mode */
+  --heading: #F5F0E8; /* Beige headings on navy background */
+  --border:  #0A0A0A;
+  --muted:   #A0AEC0;
+  --navy:    #1A365D;
 }
 
 * { box-sizing: border-box; }
@@ -28,18 +32,24 @@ body {
   transition: background 0.2s, color 0.2s;
 }
 
+h1, h2, h3, h4, h5, h6 {
+  color: var(--heading);
+}
+
 /* Neobrutalist base utilities */
 .nb-card {
   background: var(--surface);
   border: 2.5px solid var(--border);
   border-radius: 12px;
   box-shadow: 4px 4px 0px var(--border);
+  color: var(--ink);
 }
 .nb-card-navy {
   background: #0B1E3D;
-  border: 2.5px solid #0A0A0A;
+  border: 2.5px solid var(--border);
   border-radius: 12px;
-  box-shadow: 4px 4px 0px #0A0A0A;
+  box-shadow: 4px 4px 0px var(--border);
+  color: #FFFFFF;
 }
 .nb-btn {
   border: 2.5px solid var(--border, #0A0A0A);
@@ -52,7 +62,7 @@ body {
 }
 .nb-btn:hover  { transform: translate(-1px,-1px); box-shadow: 4px 4px 0px var(--border, #0A0A0A); }
 .nb-btn:active { transform: translate(2px,2px);  box-shadow: 1px 1px 0px var(--border, #0A0A0A); }
-.nb-btn-orange { background: #FF5C00; color: #fff; }
+.nb-btn-orange { background: #FF5C00; color: var(--ink); }
 .nb-btn-navy   { background: #0B1E3D; color: #fff; }
 .nb-btn-yellow { background: #FFD600; color: #0A0A0A; }
 .nb-btn-ghost  { background: var(--surface); color: var(--ink); }

@@ -109,7 +109,7 @@ export default function PostOpportunityModal({ user, onClose, onPosted }) {
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
 
       <div className="w-full sm:max-w-lg max-h-[96vh] flex flex-col rounded-t-3xl sm:rounded-2xl overflow-hidden"
-        style={{ background: '#0B1E3D', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 30px 80px rgba(0,0,0,0.7)' }}>
+        style={{ background: 'var(--surface)', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 30px 80px rgba(0,0,0,0.7)' }}>
 
         {/* ── Header ── */}
         <div className="flex-shrink-0 px-5 pt-5 pb-4"

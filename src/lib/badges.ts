@@ -1,0 +1,17 @@
+export const BADGE_DEFS: any = {
+  first_post:       { label: 'First Post',       icon: '📝', xp: 20,  desc: 'Published your first community post' },
+  first_opp:        { label: 'Trailblazer',       icon: '🚀', xp: 50,  desc: 'Posted your first opportunity' },
+  first_bookmark:   { label: 'Collector',         icon: '🔖', xp: 10,  desc: 'Bookmarked your first opportunity' },
+  first_comment:    { label: 'Conversationalist', icon: '💬', xp: 10,  desc: 'Left your first comment' },
+  streak_3:         { label: '3-Day Streak',      icon: '🔥', xp: 30,  desc: 'Used LaunchPad 3 days in a row' },
+  streak_7:         { label: 'Week Warrior',      icon: '⚡',  xp: 75,  desc: 'Used LaunchPad 7 days in a row' },
+  streak_30:        { label: 'Unstoppable',       icon: '🏆', xp: 200, desc: 'Used LaunchPad 30 days in a row' },
+  posts_5:          { label: 'Voice of the Crowd',icon: '🎤', xp: 40,  desc: 'Published 5 community posts' },
+  opps_3:           { label: 'Opportunity Hunter',icon: '🎯', xp: 75,  desc: 'Posted 3 opportunities' },
+  comments_10:      { label: 'Community Pillar',  icon: '🏛️', xp: 60,  desc: 'Left 10 comments' },
+  bookmarks_5:      { label: 'Curator',           icon: '📚', xp: 25,  desc: 'Bookmarked 5 opportunities' },
+  circle_maker:     { label: 'Circle Maker',      icon: '👥', xp: 50,  desc: 'Created your first Circle' },
+  circle_joiner:    { label: 'Team Player',        icon: '🤝', xp: 20,  desc: 'Joined your first Circle' },
+  profile_complete: { label: 'Identity',           icon: '🎟️', xp: 30,  desc: 'Completed your full profile' },
+  cv_uploaded:      { label: 'Resume Ready',       icon: '📄', xp: 25,  desc: 'Uploaded your CV' },
+};

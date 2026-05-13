@@ -1,16 +1,11 @@
 User-agent: *
 Allow: /
-Allow: /login
-Allow: /signup
-Disallow: /feed
-Disallow: /community
-Disallow: /leaderboard
-Disallow: /post
-Disallow: /bookmarks
-Disallow: /ai
-Disallow: /profile
-Disallow: /settings
-Disallow: /circles
+Allow: /assets/
+Allow: /static/
 Disallow: /api/
+Disallow: /settings
+Disallow: /profile
+Disallow: /ai
+Disallow: /bookmarks
 
-Sitemap: https://launchpad-app.vercel.app/sitemap.xml
+Sitemap: https://launchpadcm.netlify.app/sitemap.xml

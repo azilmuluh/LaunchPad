@@ -1,50 +1,6 @@
 import { useState, useEffect } from 'react';
 import { X, ChevronRight, ChevronLeft, Rocket, Users, Trophy, Zap, BookOpen, PlusSquare, Mic } from 'lucide-react';
-
-const STEPS = [
-  {
-    icon: <Rocket size={32} style={{ color: '#FF5C00' }} />,
-    title: 'Welcome to LaunchPad!',
-    desc: 'Your personal gateway to scholarships, internships, competitions, events, and jobs. Built for ambitious youth across Africa and beyond.',
-    tip: 'This guide walks you through every feature. You can re-open it anytime from your Profile.',
-  },
-  {
-    icon: <BookOpen size={32} style={{ color: '#1D4ED8' }} />,
-    title: 'Discover Opportunities',
-    desc: 'The Discover tab is your personalized feed. It uses your interests, education level, and CV to surface the most relevant opportunities for you.',
-    tip: 'Tip: Refresh the feed to pull the latest results. Use category filters to narrow down by Scholarship, Job, Competition, and more.',
-  },
-  {
-    icon: <PlusSquare size={32} style={{ color: '#00C853' }} />,
-    title: 'Post Opportunities',
-    desc: 'Found a great opportunity? Share it with the community! Every post is verified by NVIDIA AI before going live. You earn +50 XP for each verified post.',
-    tip: 'Tip: Fill in eligibility and benefits fields to make your post more useful to others.',
-  },
-  {
-    icon: <Users size={32} style={{ color: '#7C3AED' }} />,
-    title: 'Community & Circles',
-    desc: 'The Community tab is where LaunchPad comes alive. Share wins, tips, and thoughts. Create or join Circles \u2014 focused study groups with chat, tasks, and shared resources.',
-    tip: 'Tip: Create a Circle for a specific goal like "2026 IYMC Prep" and invite your study partners.',
-  },
-  {
-    icon: <Trophy size={32} style={{ color: '#FFD600' }} />,
-    title: 'Leaderboard & XP',
-    desc: 'Earn XP by being active: posting opportunities (+50), community posts (+20), comments (+10), bookmarks (+5), and daily logins (+10). Level up and climb the leaderboard!',
-    tip: 'Tip: Maintain a daily streak for bonus XP. A 7-day streak earns you 75 bonus XP.',
-  },
-  {
-    icon: <Zap size={32} style={{ color: '#FF5C00' }} />,
-    title: 'AI Assistant',
-    desc: 'The AI tab gives you a personal career advisor powered by NVIDIA. Ask it to find opportunities, help write your application essay, prepare for interviews, or explain a scholarship.',
-    tip: 'Tip: The AI knows your profile \u2014 ask it "What should I apply to this week?" for personalized picks.',
-  },
-  {
-    icon: <Mic size={32} style={{ color: '#0B1E3D' }} />,
-    title: 'Voice Assistant',
-    desc: 'Tap the microphone button anywhere in the app for a hands-free experience. Speak naturally \u2014 ask for opportunities, get advice, or navigate the platform with your voice.',
-    tip: 'Tip: Try saying "Find me scholarships for computer science" or "Improve my CV" for instant help.',
-  },
-];
+import { useI18n } from '../lib/i18n';
 
 const ONBOARDING_KEY = 'lp_onboarding_done';
 
@@ -59,7 +15,54 @@ export function useOnboarding() {
 }
 
 export default function OnboardingGuide({ onDone }: { onDone: () => void }) {
+  const { t } = useI18n();
   const [step, setStep] = useState(0);
+
+  const STEPS = [
+    {
+      icon: <Rocket size={32} style={{ color: '#FF5C00' }} />,
+      title: t('welcome_title'),
+      desc: t('welcome_desc'),
+      tip: t('welcome_tip'),
+    },
+    {
+      icon: <BookOpen size={32} style={{ color: '#1D4ED8' }} />,
+      title: t('discover_title'),
+      desc: t('discover_desc'),
+      tip: t('discover_tip'),
+    },
+    {
+      icon: <PlusSquare size={32} style={{ color: '#00C853' }} />,
+      title: t('post_title'),
+      desc: t('post_desc'),
+      tip: t('post_tip'),
+    },
+    {
+      icon: <Users size={32} style={{ color: '#7C3AED' }} />,
+      title: t('community_title'),
+      desc: t('community_desc'),
+      tip: t('community_tip'),
+    },
+    {
+      icon: <Trophy size={32} style={{ color: '#FFD600' }} />,
+      title: t('leaderboard_title'),
+      desc: t('leaderboard_desc'),
+      tip: t('leaderboard_tip'),
+    },
+    {
+      icon: <Zap size={32} style={{ color: '#FF5C00' }} />,
+      title: t('ai_title_onboarding'),
+      desc: t('ai_desc_onboarding'),
+      tip: t('ai_tip_onboarding'),
+    },
+    {
+      icon: <Mic size={32} style={{ color: 'var(--surface)' }} />,
+      title: t('voice_title'),
+      desc: t('voice_desc'),
+      tip: t('voice_tip'),
+    },
+  ];
+
   const current = STEPS[step];
   const isLast  = step === STEPS.length - 1;
 
@@ -77,8 +80,8 @@ export default function OnboardingGuide({ onDone }: { onDone: () => void }) {
         <div className="p-6">
           {/* Step counter */}
           <div className="flex items-center justify-between mb-5">
-            <span className="text-xs font-black uppercase tracking-widest" style={{ color: '#aaa' }}>
-              Step {step + 1} of {STEPS.length}
+            <span className="text-xs font-black uppercase tracking-widest" style={{ color: 'var(--muted)' }}>
+              {t('step_count', { n: step + 1, total: STEPS.length })}
             </span>
             <button onClick={onDone} className="nb-btn nb-btn-ghost p-1.5">
               <X size={14} style={{ color: '#999' }} />
@@ -87,7 +90,7 @@ export default function OnboardingGuide({ onDone }: { onDone: () => void }) {
 
           {/* Icon */}
           <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-5"
-            style={{ background: '#F5F0E8', border: '2.5px solid #0A0A0A', boxShadow: '3px 3px 0 #0A0A0A' }}>
+            style={{ background: 'var(--bg)', border: '2.5px solid #0A0A0A', boxShadow: '3px 3px 0 #0A0A0A' }}>
             {current.icon}
           </div>
 
@@ -125,17 +128,17 @@ export default function OnboardingGuide({ onDone }: { onDone: () => void }) {
               onClick={() => setStep(s => s - 1)}
               disabled={step === 0}
               className="nb-btn nb-btn-ghost px-4 py-2 text-sm flex items-center gap-1.5 disabled:opacity-30">
-              <ChevronLeft size={14} /> Back
+              <ChevronLeft size={14} /> {t('back')}
             </button>
             {isLast ? (
               <button onClick={onDone}
                 className="nb-btn nb-btn-orange px-6 py-2.5 text-sm font-black">
-                Launch LaunchPad!
+                {t('launch_btn')}
               </button>
             ) : (
               <button onClick={() => setStep(s => s + 1)}
                 className="nb-btn nb-btn-orange px-5 py-2 text-sm flex items-center gap-1.5">
-                Next <ChevronRight size={14} />
+                {t('continue')} <ChevronRight size={14} />
               </button>
             )}
           </div>

@@ -3,21 +3,25 @@ import { Link } from 'react-router-dom';
 import { setSession, apiRequest } from '../lib/auth';
 import { INTERESTS, INTEREST_CATEGORIES, getInterestsByCategory } from '../lib/interests';
 import { Check, ChevronRight, ChevronLeft, Eye, EyeOff, Upload, FileText, RefreshCw, Building2, User } from 'lucide-react';
+import SEO from '../components/SEO';
+import { useI18n } from '../lib/i18n';
 
-const EDU_LEVELS = ["High School", "Undergraduate", "Bachelor's Degree", "Master's Degree", "PhD", "Professional Degree", "Other"];
+const EDU_LEVELS_EN = ["High School", "Undergraduate", "Bachelor's Degree", "Master's Degree", "PhD", "Professional Degree", "Other"];
+const EDU_LEVELS_FR = ["Lycée", "Premier Cycle", "Licence", "Master", "Doctorat", "Diplôme Professionnel", "Autre"];
 const LOCATIONS  = ["Yaound\u00e9", "Douala", "Bafoussam", "Bamenda", "Garoua", "Maroua", "Ngaound\u00e9r\u00e9", "Bertoua", "Ebolowa", "Kribi", "Other"];
-const ORG_TYPES  = ["NGO / Non-Profit", "University / School", "Company / Startup", "Government Agency", "Research Institute", "Media / Press", "Other"];
-
-const STEPS = [
-  { num: 1, label: 'Account Type' },
-  { num: 2, label: 'Account Info' },
-  { num: 3, label: 'Verify Email' },
-  { num: 4, label: 'Interests'    },
-  { num: 5, label: 'Education'    },
-  { num: 6, label: 'Upload CV'    },
-];
+const ORG_TYPES_EN  = ["NGO / Non-Profit", "University / School", "Company / Startup", "Government Agency", "Research Institute", "Media / Press", "Other"];
+const ORG_TYPES_FR  = ["ONG / Non-Profit", "Université / École", "Entreprise / Startup", "Agence Gouvernementale", "Institut de Recherche", "Média / Presse", "Autre"];
 
 export default function SignupPage({ setUser }: any) {
+  const { t, lang } = useI18n();
+  const STEPS = [
+    { num: 1, label: t('account_type_label') },
+    { num: 2, label: t('account_info_label') },
+    { num: 3, label: t('verify_email_label') },
+    { num: 4, label: t('interests_label')    },
+    { num: 5, label: t('education_label')    },
+    { num: 6, label: t('upload_cv_label')    },
+  ];
   const [step, setStep]             = useState(1);
   const [loading, setLoading]       = useState(false);
   const [error, setError]           = useState('');
@@ -57,24 +61,41 @@ export default function SignupPage({ setUser }: any) {
 
   const sendCode = async () => {
     setLoading(true); setError('');
+    console.log('[Signup] Sending code to:', form.email);
     try {
       const r = await apiRequest('/api/auth?action=send-code', { method: 'POST', body: JSON.stringify({ email: form.email, name: form.full_name }) });
-      const d = await r.json();
-      if (!r.ok) throw new Error(d.error);
+      const text = await r.text();
+      console.log('[Signup] send-code response status:', r.status);
+      let d: any = {};
+      try { d = text ? JSON.parse(text) : {}; } catch(e) {}
+      if (!r.ok) throw new Error(d.error || `Server error: ${r.status}`);
       setCodeSent(true);
-      if (d.dev_code) setDevCode(d.dev_code);
-    } catch (e: any) { setError(e.message); }
+      if (d.dev_code) {
+        console.log('[Signup] DEV CODE received:', d.dev_code);
+        setDevCode(d.dev_code);
+      }
+    } catch (e: any) {
+      console.error('[Signup] sendCode error:', e);
+      setError(e.message);
+    }
     setLoading(false);
   };
 
   const verifyCode = async () => {
     setLoading(true); setError('');
+    console.log('[Signup] Verifying code for:', form.email);
     try {
       const r = await apiRequest('/api/auth?action=verify-code', { method: 'POST', body: JSON.stringify({ email: form.email, code: form.code }) });
-      const d = await r.json();
-      if (!r.ok) throw new Error(d.error);
+      const text = await r.text();
+      console.log('[Signup] verify-code response status:', r.status);
+      let d: any = {};
+      try { d = text ? JSON.parse(text) : {}; } catch(e) {}
+      if (!r.ok) throw new Error(d.error || `Server error: ${r.status}`);
       setVerified(true);
-    } catch (e: any) { setError(e.message); }
+    } catch (e: any) {
+      console.error('[Signup] verifyCode error:', e);
+      setError(e.message);
+    }
     setLoading(false);
   };
 
@@ -87,18 +108,30 @@ export default function SignupPage({ setUser }: any) {
 
   const handleSubmit = async () => {
     setLoading(true); setError('');
+    console.log('[Signup] Submitting form...', form.account_type);
     try {
+      const ageNum = parseInt(form.age);
       const payload = {
         ...form,
         account_type: form.account_type,
-        age: parseInt(form.age) || null,
+        age: isNaN(ageNum) ? null : ageNum,
       };
+      // Ensure CV text and filename are sent if present
+      if (form.cv_text) payload.cv_text = form.cv_text;
+      if (form.cv_filename) payload.cv_filename = form.cv_filename;
       const r = await apiRequest('/api/auth?action=signup', { method: 'POST', body: JSON.stringify(payload) });
-      const d = await r.json();
-      if (!r.ok) throw new Error(d.error);
+      const text = await r.text();
+      console.log('[Signup] signup response status:', r.status);
+      let d: any = {};
+      try { d = text ? JSON.parse(text) : {}; } catch(e) {}
+      if (!r.ok) throw new Error(d.error || `Server error: ${r.status}`);
+      console.log('[Signup] Signup successful, setting session');
       setSession(d.token, d.user);
       setUser(d.user);
-    } catch (e: any) { setError(e.message); }
+    } catch (e: any) {
+      console.error('[Signup] handleSubmit error:', e);
+      setError(e.message);
+    }
     setLoading(false);
   };
 
@@ -114,12 +147,17 @@ export default function SignupPage({ setUser }: any) {
   const visibleSteps = isOrg ? STEPS.slice(0, 3) : STEPS;
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: '#F5F0E8' }}>
+    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: 'var(--bg)' }}>
+      <SEO 
+        title="Join LaunchPad Community" 
+        description="Create your free LaunchPad account to discover scholarships, internships, and competitions. Join 1,000+ African youth accelerating their future."
+        canonical="/signup"
+      />
       <div className="w-full max-w-lg">
         {/* Logo */}
         <div className="flex items-center gap-3 mb-6 justify-center">
           <div className="w-10 h-10 rounded-xl overflow-hidden" style={{ border: '2.5px solid #0A0A0A', boxShadow: '3px 3px 0 #0A0A0A' }}>
-            <img src="/rocket-logo.png" alt="LaunchPad" className="w-full h-full object-cover" />
+            <img src="/LaunchPad.svg" alt="LaunchPad" className="w-full h-full object-cover" />
           </div>
           <span className="font-black text-2xl">LaunchPad</span>
         </div>
@@ -157,18 +195,18 @@ export default function SignupPage({ setUser }: any) {
           {/* STEP 1 — Account Type */}
           {step === 1 && (
             <div className="space-y-4">
-              <h2 className="font-black text-xl">Join LaunchPad</h2>
-              <p className="text-sm font-bold" style={{ color: '#999' }}>Are you signing up as a person or an organization?</p>
+              <h2 className="font-black text-xl">LaunchPad</h2>
+              <p className="text-sm font-bold" style={{ color: '#999' }}>{t('person_or_org') || 'Are you a person or an organization?'}</p>
               <div className="grid grid-cols-2 gap-3">
                 {[
-                  { type: 'person',       icon: <User size={28} />,       label: 'Person',       desc: 'Student, professional, or job seeker' },
-                  { type: 'organization', icon: <Building2 size={28} />,  label: 'Organization', desc: 'NGO, company, university, or institution' },
+                  { type: 'person',       icon: <User size={28} />,       label: t('person_label'),       desc: t('person_desc') },
+                  { type: 'organization', icon: <Building2 size={28} />,  label: t('organization_label'), desc: t('organization_desc') },
                 ].map(o => (
                   <button key={o.type} onClick={() => set('account_type', o.type)}
                     className="flex flex-col items-center gap-2 p-5 rounded-2xl text-center transition-all nb-btn"
                     style={form.account_type === o.type
                       ? { background: '#FF5C00', color: '#fff', borderColor: '#FF5C00', boxShadow: '3px 3px 0 #0A0A0A' }
-                      : { background: '#fff', color: '#0A0A0A' }
+                      : { background: 'var(--surface)', color: 'var(--ink)' }
                     }>
                     {o.icon}
                     <span className="font-black text-sm">{o.label}</span>
@@ -182,45 +220,45 @@ export default function SignupPage({ setUser }: any) {
           {/* STEP 2 — Account Info */}
           {step === 2 && (
             <div className="space-y-4">
-              <h2 className="font-black text-xl">{isOrg ? 'Organization Info' : 'Create your account'}</h2>
+              <h2 className="font-black text-xl">{isOrg ? t('org_info') || 'Organization Info' : t('signup')}</h2>
               <div className="grid grid-cols-2 gap-3">
                 <div className="col-span-2">
-                  <label className={LBL} style={{ color: '#666' }}>{isOrg ? 'Organization Name' : 'Full Name'} *</label>
+                  <label className={LBL} style={{ color: 'var(--muted)' }}>{isOrg ? t('org_name') : t('full_name')} *</label>
                   <input className={INP} value={form.full_name} onChange={e => set('full_name', e.target.value)}
                     placeholder={isOrg ? 'e.g. MasterCard Foundation' : 'e.g. Jean-Pierre Kamga'} />
                 </div>
                 {isOrg && (
                   <>
                     <div>
-                      <label className={LBL} style={{ color: '#666' }}>Organization Type</label>
+                      <label className={LBL} style={{ color: 'var(--muted)' }}>{t('org_type')}</label>
                       <select className={INP} value={form.org_type} onChange={e => set('org_type', e.target.value)}>
-                        <option value="">Select type</option>
-                        {ORG_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                        <option value="">{t('select_prompt')}</option>
+                        {(lang === 'fr' ? ORG_TYPES_FR : ORG_TYPES_EN).map(t => <option key={t} value={t}>{t}</option>)}
                       </select>
                     </div>
                     <div>
-                      <label className={LBL} style={{ color: '#666' }}>Website</label>
+                      <label className={LBL} style={{ color: 'var(--muted)' }}>{t('website')}</label>
                       <input className={INP} type="url" value={form.org_website} onChange={e => set('org_website', e.target.value)} placeholder="https://" />
                     </div>
                   </>
                 )}
                 <div className="col-span-2">
-                  <label className={LBL} style={{ color: '#666' }}>Email *</label>
+                  <label className={LBL} style={{ color: 'var(--muted)' }}>{t('email')} *</label>
                   <input className={INP} type="email" value={form.email} onChange={e => set('email', e.target.value)} placeholder="you@example.com" />
                 </div>
                 <div>
-                  <label className={LBL} style={{ color: '#666' }}>Password * (min 6)</label>
+                  <label className={LBL} style={{ color: 'var(--muted)' }}>{t('password')} * (min 6)</label>
                   <div className="relative">
                     <input className={INP} type={showPass ? 'text' : 'password'} value={form.password}
                       onChange={e => set('password', e.target.value)} placeholder="\u2022\u2022\u2022\u2022\u2022\u2022" />
                     <button type="button" onClick={() => setShowPass(p => !p)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2" style={{ color: '#aaa' }}>
+                      className="absolute right-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--muted)' }}>
                       {showPass ? <EyeOff size={14} /> : <Eye size={14} />}
                     </button>
                   </div>
                 </div>
                 <div>
-                  <label className={LBL} style={{ color: '#666' }}>Phone</label>
+                  <label className={LBL} style={{ color: 'var(--muted)' }}>{t('phone')}</label>
                   <input className={INP} type="tel" value={form.phone} onChange={e => set('phone', e.target.value)} placeholder="+237 6XX..." />
                 </div>
               </div>
@@ -230,8 +268,8 @@ export default function SignupPage({ setUser }: any) {
           {/* STEP 3 — Email Verification */}
           {step === 3 && (
             <div className="space-y-4">
-              <h2 className="font-black text-xl">Verify your email</h2>
-              <p className="text-sm font-bold" style={{ color: '#999' }}>We'll send a 6-digit code to <strong style={{ color: '#0A0A0A' }}>{form.email}</strong></p>
+              <h2 className="font-black text-xl">{t('verify_email_label')}</h2>
+              <p className="text-sm font-bold" style={{ color: '#999' }}>{t('verify_desc', { email: form.email })}</p>
               {devCode && (
                 <div className="p-3 rounded-xl font-bold text-sm" style={{ background: '#FFFBEB', border: '2px solid #FFD600' }}>
                   Dev mode &mdash; your code: <strong style={{ fontSize: '20px', letterSpacing: '4px' }}>{devCode}</strong>
@@ -241,18 +279,18 @@ export default function SignupPage({ setUser }: any) {
                 !codeSent ? (
                   <button onClick={sendCode} disabled={loading}
                     className="nb-btn nb-btn-navy w-full py-3 text-sm disabled:opacity-50">
-                    {loading ? 'Sending...' : 'Send Verification Code'}
+                    {loading ? t('loading') : t('send_code')}
                   </button>
                 ) : (
                   <div className="space-y-3">
-                    <label className={LBL} style={{ color: '#666' }}>Enter 6-digit code</label>
+                    <label className={LBL} style={{ color: 'var(--muted)' }}>{t('enter_6_digit') || 'Enter 6-digit code'}</label>
                     <input className="nb-input text-center text-2xl font-black tracking-widest w-full"
                       value={form.code} onChange={e => set('code', e.target.value.slice(0, 6))}
                       placeholder="000000" maxLength={6} />
                     <div className="flex gap-2">
                       <button onClick={verifyCode} disabled={loading || form.code.length !== 6}
                         className="nb-btn nb-btn-orange flex-1 py-2.5 text-sm disabled:opacity-50">
-                        {loading ? 'Verifying...' : 'Verify'}
+                        {loading ? t('verifying_btn') : t('verify')}
                       </button>
                       <button onClick={sendCode} disabled={loading} className="nb-btn nb-btn-ghost px-3">
                         <RefreshCw size={14} />
@@ -262,8 +300,8 @@ export default function SignupPage({ setUser }: any) {
                 )
               ) : (
                 <div className="p-4 rounded-xl text-center" style={{ background: '#E8FFF0', border: '2.5px solid #00C853' }}>
-                  <p className="font-black text-lg">\u2705 Email verified!</p>
-                  <p className="text-sm font-bold" style={{ color: '#666' }}>{isOrg ? 'Click Create Account below.' : 'Continue to the next step.'}</p>
+                  <p className="font-black text-lg">\u2705 {t('email_verified')}</p>
+                  <p className="text-sm font-bold" style={{ color: 'var(--muted)' }}>{isOrg ? t('click_create_account') || 'Click Create Account below.' : t('continue_next_step') || 'Continue to the next step.'}</p>
                 </div>
               )}
             </div>
@@ -272,16 +310,16 @@ export default function SignupPage({ setUser }: any) {
           {/* STEP 4 — Interests (persons only) */}
           {step === 4 && (
             <div>
-              <h2 className="font-black text-xl mb-1">Your interests</h2>
-              <p className="text-sm font-bold mb-1" style={{ color: '#999' }}>Pick at least 3 to personalize your feed</p>
+              <h2 className="font-black text-xl mb-1">{t('interests_label')}</h2>
+              <p className="text-sm font-bold mb-1" style={{ color: '#999' }}>{t('pick_interests')}</p>
               <p className="text-xs font-black mb-3" style={{ color: form.interests.length >= 3 ? '#00C853' : '#FF5C00' }}>
-                {form.interests.length} selected {form.interests.length < 3 ? `(need ${3 - form.interests.length} more)` : '\u2713'}
+                {form.interests.length} {t('selected')} {form.interests.length < 3 ? `(${t('need_more', { n: 3 - form.interests.length })})` : '\u2713'}
               </p>
               <div className="flex flex-wrap gap-1.5 mb-3">
                 {INTEREST_CATEGORIES.map(cat => (
                   <button key={cat} onClick={() => setSelCat(cat)}
                     className="nb-btn px-2.5 py-1 text-xs"
-                    style={selCat === cat ? { background: '#0B1E3D', color: '#fff' } : { background: '#fff' }}>{cat}</button>
+                    style={selCat === cat ? { background: 'var(--surface)', color: 'var(--ink)' } : { background: 'var(--surface)' }}>{cat}</button>
                 ))}
               </div>
               <div className="grid grid-cols-2 gap-1.5 max-h-56 overflow-y-auto">
@@ -304,23 +342,23 @@ export default function SignupPage({ setUser }: any) {
           {/* STEP 5 — Education */}
           {step === 5 && (
             <div className="space-y-4">
-              <h2 className="font-black text-xl">Education & profile</h2>
+              <h2 className="font-black text-xl">{t('education_label')}</h2>
               <div>
-                <label className={LBL} style={{ color: '#666' }}>Education Level *</label>
+                <label className={LBL} style={{ color: 'var(--muted)' }}>{t('education')} *</label>
                 <select className={INP} value={form.education_level} onChange={e => set('education_level', e.target.value)}>
-                  <option value="">Select level</option>
-                  {EDU_LEVELS.map(l => <option key={l} value={l}>{l}</option>)}
+                  <option value="">{t('select_level')}</option>
+                  {(lang === 'fr' ? EDU_LEVELS_FR : EDU_LEVELS_EN).map(l => <option key={l} value={l}>{l}</option>)}
                 </select>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className={LBL} style={{ color: '#666' }}>Age *</label>
+                  <label className={LBL} style={{ color: 'var(--muted)' }}>{t('age')} *</label>
                   <input className={INP} type="number" min="14" max="80" value={form.age} onChange={e => set('age', e.target.value)} placeholder="22" />
                 </div>
                 <div>
-                  <label className={LBL} style={{ color: '#666' }}>City</label>
+                  <label className={LBL} style={{ color: 'var(--muted)' }}>{t('location')}</label>
                   <select className={INP} value={form.location} onChange={e => set('location', e.target.value)}>
-                    <option value="">Select city</option>
+                    <option value="">{t('select_city')}</option>
                     {LOCATIONS.map(l => <option key={l} value={l}>{l}</option>)}
                   </select>
                 </div>
@@ -331,8 +369,8 @@ export default function SignupPage({ setUser }: any) {
           {/* STEP 6 — CV Upload */}
           {step === 6 && (
             <div className="space-y-4">
-              <h2 className="font-black text-xl">Upload your CV</h2>
-              <p className="text-sm font-bold" style={{ color: '#999' }}>Optional &mdash; helps us match better opportunities to your profile.</p>
+              <h2 className="font-black text-xl">{t('upload_cv_label')}</h2>
+              <p className="text-sm font-bold" style={{ color: '#999' }}>{t('cv_desc')}</p>
               <div
                 className="border-dashed border-4 rounded-2xl p-8 text-center cursor-pointer transition-all"
                 style={{ borderColor: cvDragging ? '#FF5C00' : '#0A0A0A', background: cvDragging ? '#FFF3EE' : '#FAFAF7' }}
@@ -346,11 +384,11 @@ export default function SignupPage({ setUser }: any) {
                 {form.cv_filename ? (
                   <><FileText size={36} className="mx-auto mb-2" style={{ color: '#00C853' }} />
                     <p className="font-black">{form.cv_filename}</p>
-                    <p className="text-xs font-bold mt-1" style={{ color: '#00C853' }}>Ready to upload</p></>
+                    <p className="text-xs font-bold mt-1" style={{ color: '#00C853' }}>{t('ready')}</p></>
                 ) : (
-                  <><Upload size={36} className="mx-auto mb-2" style={{ color: '#aaa' }} />
-                    <p className="font-black">Drop or click to browse</p>
-                    <p className="text-xs font-bold mt-1" style={{ color: '#aaa' }}>.txt, .pdf, .doc, .docx</p></>
+                  <><Upload size={36} className="mx-auto mb-2" style={{ color: 'var(--muted)' }} />
+                    <p className="font-black">{t('browse_btn')}</p>
+                    <p className="text-xs font-bold mt-1" style={{ color: 'var(--muted)' }}>.txt, .pdf, .doc, .docx</p></>
                 )}
               </div>
             </div>
@@ -361,20 +399,20 @@ export default function SignupPage({ setUser }: any) {
             <div>
               {step > 1 && (
                 <button onClick={() => setStep(s => s - 1)} className="nb-btn nb-btn-ghost px-4 py-2 text-sm flex items-center gap-1.5">
-                  <ChevronLeft size={14} /> Back
+                  <ChevronLeft size={14} /> {t('back')}
                 </button>
               )}
             </div>
             <button onClick={step < (isOrg ? 3 : 6) ? nextStep : handleSubmit}
               disabled={!canNext() || loading}
               className="nb-btn nb-btn-orange px-5 py-2.5 text-sm flex items-center gap-1.5 disabled:opacity-40">
-              {loading ? 'Please wait...' : step === (isOrg ? 3 : 6) ? 'Create Account' : (<>Continue <ChevronRight size={14} /></>)}
+              {loading ? t('please_wait') : step === (isOrg ? 3 : 6) ? t('create_account_btn') : (<>{t('continue')} <ChevronRight size={14} /></>)}
             </button>
           </div>
 
           <p className="text-center text-sm font-bold mt-4" style={{ color: '#999' }}>
-            Already have an account?{' '}
-            <Link to="/login" className="font-black" style={{ color: '#FF5C00' }}>Sign in</Link>
+            {t('already_account')}{' '}
+            <Link to="/login" className="font-black" style={{ color: '#FF5C00' }}>{t('signin')}</Link>
           </p>
         </div>
       </div>

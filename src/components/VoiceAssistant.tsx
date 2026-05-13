@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { apiRequest } from '../lib/auth';
 import { Mic, MicOff, X, Volume2, VolumeX, Loader, Sparkles } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -15,6 +16,7 @@ declare global {
 }
 
 export default function VoiceAssistant({ user, onClose }: any) {
+  const navigate = useNavigate();
   const [listening, setListening]   = useState(false);
   const [speaking, setSpeaking]     = useState(false);
   const [thinking, setThinking]     = useState(false);
@@ -121,6 +123,29 @@ export default function VoiceAssistant({ user, onClose }: any) {
     setThinking(true);
 
     try {
+      // First: route intent via ai-agent (tool protocol)
+      const intentRes = await apiRequest('/api/ai-agent', {
+        method: 'POST',
+        body: JSON.stringify({ message: text, user_id: user.id }),
+      });
+      const intent = await intentRes.json();
+      if (intentRes.ok) {
+        if (intent.action === 'NAVIGATE' && intent.route) {
+          setThinking(false);
+          setMessages(prev => [...prev, { role: 'assistant', content: intent.message || 'Taking you there.' }]);
+          speak(intent.message || 'Taking you there.');
+          onClose?.();
+          navigate(intent.route);
+          return;
+        }
+        if (intent.action === 'CREATE_GOAL' || intent.action === 'READ_URL') {
+          setThinking(false);
+          setMessages(prev => [...prev, { role: 'assistant', content: intent.message || 'Done.' }]);
+          speak(intent.message || 'Done.');
+          return;
+        }
+      }
+
       const context = contextRef.current.slice(-8);
       const res = await apiRequest('/api/ai-chat', {
         method: 'POST',
@@ -200,11 +225,11 @@ export default function VoiceAssistant({ user, onClose }: any) {
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
 
       <div className="w-full sm:max-w-lg max-h-[90vh] flex flex-col rounded-t-3xl sm:rounded-2xl overflow-hidden"
-        style={{ background: '#F5F0E8', border: '3px solid #0A0A0A', boxShadow: '6px 6px 0 #0A0A0A' }}>
+        style={{ background: 'var(--bg)', border: '3px solid #0A0A0A', boxShadow: '6px 6px 0 #0A0A0A' }}>
 
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4"
-          style={{ background: '#0B1E3D', borderBottom: '2.5px solid #0A0A0A' }}>
+          style={{ background: 'var(--surface)', borderBottom: '2.5px solid #0A0A0A' }}>
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl flex items-center justify-center"
               style={{ background: '#FF5C00', border: '2px solid #FFD600' }}>
@@ -225,7 +250,7 @@ export default function VoiceAssistant({ user, onClose }: any) {
             </button>
             <button onClick={onClose}
               className="nb-btn nb-btn-ghost w-8 h-8 flex items-center justify-center"
-              style={{ borderColor: 'rgba(255,255,255,0.3)', color: '#fff' }}>
+              style={{ borderColor: 'rgba(255,255,255,0.3)', color: 'var(--ink)' }}>
               <X size={14} />
             </button>
           </div>
@@ -238,14 +263,14 @@ export default function VoiceAssistant({ user, onClose }: any) {
               <div className="w-7 h-7 rounded-lg flex-shrink-0 flex items-center justify-center text-xs font-black"
                 style={msg.role === 'user'
                   ? { background: '#FF5C00', color: '#fff', border: '2px solid #0A0A0A' }
-                  : { background: '#0B1E3D', color: '#FFD600', border: '2px solid #0A0A0A' }
+                  : { background: 'var(--surface)', color: '#FFD600', border: '2px solid #0A0A0A' }
                 }>
                 {msg.role === 'user' ? user?.full_name?.charAt(0)?.toUpperCase() : <Sparkles size={12} />}
               </div>
               <div className="max-w-xs rounded-2xl px-4 py-2.5 text-sm font-medium"
                 style={msg.role === 'user'
                   ? { background: '#FF5C00', color: '#fff', borderBottomRightRadius: '4px', border: '2px solid #0A0A0A' }
-                  : { background: '#fff', color: '#0A0A0A', borderBottomLeftRadius: '4px', border: '2px solid #0A0A0A', boxShadow: '2px 2px 0 #0A0A0A' }
+                  : { background: 'var(--surface)', color: 'var(--ink)', borderBottomLeftRadius: '4px', border: '2px solid #0A0A0A', boxShadow: '2px 2px 0 #0A0A0A' }
                 }>
                 {msg.content || (thinking && i === messages.length - 1 ? '...' : '')}
               </div>
@@ -254,10 +279,10 @@ export default function VoiceAssistant({ user, onClose }: any) {
           {thinking && (
             <div className="flex gap-2">
               <div className="w-7 h-7 rounded-lg flex items-center justify-center"
-                style={{ background: '#0B1E3D', color: '#FFD600', border: '2px solid #0A0A0A' }}>
+                style={{ background: 'var(--surface)', color: '#FFD600', border: '2px solid #0A0A0A' }}>
                 <Loader size={12} className="animate-spin" />
               </div>
-              <div className="px-4 py-2.5 rounded-2xl text-sm font-bold" style={{ background: '#fff', border: '2px solid #0A0A0A' }}>
+              <div className="px-4 py-2.5 rounded-2xl text-sm font-bold" style={{ background: 'var(--surface)', border: '2px solid #0A0A0A' }}>
                 Thinking...
               </div>
             </div>
@@ -269,7 +294,7 @@ export default function VoiceAssistant({ user, onClose }: any) {
         {(listening || transcript) && (
           <div className="px-5 py-2" style={{ background: '#FFFBEB', borderTop: '2px solid #FFD600' }}>
             <p className="text-xs font-black uppercase tracking-widest mb-1" style={{ color: '#92400E' }}>Hearing...</p>
-            <p className="text-sm font-bold" style={{ color: '#0A0A0A', minHeight: '20px' }}>
+            <p className="text-sm font-bold" style={{ color: 'var(--ink)', minHeight: '20px' }}>
               {transcript || 'Listening for your voice...'}
             </p>
           </div>
@@ -277,7 +302,7 @@ export default function VoiceAssistant({ user, onClose }: any) {
 
         {/* Controls */}
         <div className="px-5 py-4 flex items-center justify-center gap-4"
-          style={{ borderTop: '2.5px solid #0A0A0A', background: '#fff' }}>
+          style={{ borderTop: '2.5px solid #0A0A0A', background: 'var(--surface)' }}>
 
           {/* Waveform bars */}
           <div className="flex items-center gap-0.5 h-8">
@@ -310,7 +335,7 @@ export default function VoiceAssistant({ user, onClose }: any) {
               <div key={i} className="w-1 rounded-full transition-all duration-100"
                 style={{
                   height: speaking ? `${8 + Math.abs(Math.sin((Date.now() / 80) + i * 0.8)) * 20}px` : '4px',
-                  background: speaking ? '#0B1E3D' : '#ddd',
+                  background: speaking ? 'var(--surface)' : '#ddd',
                   maxHeight: '32px',
                   minHeight: '4px',
                 }} />
@@ -318,7 +343,7 @@ export default function VoiceAssistant({ user, onClose }: any) {
           </div>
         </div>
 
-        <p className="text-center text-xs font-bold pb-3" style={{ color: '#aaa' }}>
+        <p className="text-center text-xs font-bold pb-3" style={{ color: 'var(--muted)' }}>
           {listening ? 'Tap mic to stop' : 'Tap mic to speak'}
         </p>
       </div>

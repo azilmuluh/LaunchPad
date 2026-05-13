@@ -115,9 +115,15 @@ export default function PostCard({ post, currentUser, onUpdated, onDeleted }) {
         {/* Header */}
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center text-sm font-bold text-white flex-shrink-0"
-              style={{ background: `linear-gradient(135deg, hsl(${(post.user_name?.charCodeAt(0) || 200) % 360}, 60%, 45%), hsl(${(post.user_name?.charCodeAt(0) || 200) % 360 + 40}, 60%, 35%))` }}>
-              {post.user_name?.charAt(0)?.toUpperCase()}
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center text-sm font-bold text-white flex-shrink-0 overflow-hidden"
+              style={{ 
+                background: post.user_avatar ? 'none' : `linear-gradient(135deg, hsl(${(post.user_name?.charCodeAt(0) || 200) % 360}, 60%, 45%), hsl(${(post.user_name?.charCodeAt(0) || 200) % 360 + 40}, 60%, 35%))`,
+                border: post.user_avatar ? '2px solid rgba(255,255,255,0.1)' : 'none'
+              }}>
+              {post.user_avatar 
+                ? <img src={post.user_avatar} alt="" className="w-full h-full object-cover" />
+                : post.user_name?.charAt(0)?.toUpperCase()
+              }
             </div>
             <div>
               <div className="flex items-center gap-2">
