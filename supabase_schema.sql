@@ -588,10 +588,14 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- Drop existing functions if they exist (to avoid parameter name conflicts)
+DROP FUNCTION IF EXISTS check_user_eligibility(JSONB, JSONB);
+DROP FUNCTION IF EXISTS calculate_match_score(JSONB, JSONB);
+
 -- Eligibility check function
 CREATE OR REPLACE FUNCTION check_user_eligibility(
-  user_data JSONB,
-  opportunity_eligibility JSONB
+  p_user_data JSONB,
+  p_opportunity_eligibility JSONB
 ) RETURNS BOOLEAN AS $$
 DECLARE
   user_age INTEGER;
@@ -599,12 +603,12 @@ DECLARE
   age_max INTEGER;
 BEGIN
   -- Age check
-  IF opportunity_eligibility ? 'age_min' OR opportunity_eligibility ? 'age_max' THEN
-    user_age := (user_data->>'age')::INTEGER;
+  IF p_opportunity_eligibility ? 'age_min' OR p_opportunity_eligibility ? 'age_max' THEN
+    user_age := (p_user_data->>'age')::INTEGER;
     IF user_age IS NULL THEN RETURN FALSE; END IF;
     
-    age_min := (opportunity_eligibility->>'age_min')::INTEGER;
-    age_max := (opportunity_eligibility->>'age_max')::INTEGER;
+    age_min := (p_opportunity_eligibility->>'age_min')::INTEGER;
+    age_max := (p_opportunity_eligibility->>'age_max')::INTEGER;
     
     IF age_min IS NOT NULL AND user_age < age_min THEN RETURN FALSE; END IF;
     IF age_max IS NOT NULL AND user_age > age_max THEN RETURN FALSE; END IF;
@@ -617,8 +621,8 @@ $$ LANGUAGE plpgsql;
 
 -- Match score calculation function
 CREATE OR REPLACE FUNCTION calculate_match_score(
-  user_data JSONB,
-  opportunity_data JSONB
+  p_user_data JSONB,
+  p_opportunity_data JSONB
 ) RETURNS INTEGER AS $$
 DECLARE
   score INTEGER := 0;
