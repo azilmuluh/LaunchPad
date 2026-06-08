@@ -589,8 +589,8 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Drop existing functions if they exist (to avoid parameter name conflicts)
-DROP FUNCTION IF EXISTS check_user_eligibility(JSONB, JSONB);
-DROP FUNCTION IF EXISTS calculate_match_score(JSONB, JSONB);
+DROP FUNCTION IF EXISTS check_user_eligibility(p_user_data JSONB, p_opportunity_eligibility JSONB);
+DROP FUNCTION IF EXISTS calculate_match_score(p_user_data JSONB, p_opportunity_data JSONB);
 
 -- Eligibility check function
 CREATE OR REPLACE FUNCTION check_user_eligibility(

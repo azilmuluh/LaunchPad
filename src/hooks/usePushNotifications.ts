@@ -6,7 +6,7 @@
 import { useState, useEffect } from 'react';
 import { apiRequest } from '../lib/auth';
 
-const VAPID_PUBLIC_KEY = 'YOUR_VAPID_PUBLIC_KEY'; // Replace with actual key
+const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY;
 
 interface PushNotificationState {
   supported: boolean;
@@ -103,7 +103,7 @@ export function usePushNotifications() {
       // Subscribe to push
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY).buffer.slice(0) as ArrayBuffer
       });
 
       // Send subscription to backend
@@ -218,6 +218,5 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
     outputArray[i] = rawData.charCodeAt(i);
   }
   
-  // Ensure we return a Uint8Array with ArrayBuffer (not ArrayBufferLike)
-  return new Uint8Array(outputArray.buffer as ArrayBuffer);
+  return outputArray;
 }
