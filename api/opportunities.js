@@ -1,6 +1,12 @@
 import supabase from './_supabase.js';
 import jwt from 'jsonwebtoken';
 import { seedOpportunities } from './seed-opps.js';
+import {
+  filterOpportunities,
+  sortOpportunities,
+  isSpecificOpportunity,
+  getSpecificityScore,
+} from './_opportunity-quality.js';
 
 const JWT_SECRET    = process.env.JWT_SECRET;
 const SERP_API_KEY  = process.env.SERP_API_KEY;
@@ -11,7 +17,7 @@ if (!SERPER_KEY && !SERP_API_KEY) {
   console.error('[Opportunities] CRITICAL: Both Search API keys are missing! Live search will not work.');
 }
 
-let seeded = false; // in-process flag to avoid re-seeding every request
+let seeded = false;
 
 const CATEGORY_KEYWORDS = {
   scholarship: ['scholarship','bursary','fellowship','grant','award','funded','study abroad','financial aid', 'stipend'],
@@ -60,18 +66,80 @@ function extractLocation(s) {
   return m ? m[0] : null;
 }
 
+function extractAmount(s) {
+  const match = s.match(/(fully funded|\$[\d,]+|€[\d,]+|£[\d,]+|[\d,]+\s*(?:FCFA|CFA))/i);
+  return match ? match[1] : 'Full Funding / Varies';
+}
+
+function extractDegreeLevel(s) {
+  const text = s.toLowerCase();
+  if (text.includes('phd') || text.includes('postdoc') || text.includes('doctoral')) return 'PhD / Postdoc';
+  if (text.includes('master') || text.includes('msc') || text.includes('mba')) return 'Master\'s';
+  if (text.includes('undergraduate') || text.includes('bachelor') || text.includes('bsc')) return 'Undergraduate';
+  if (text.includes('high school') || text.includes('secondary')) return 'High School';
+  return 'All Levels';
+}
+
+function extractCountryFocus(s) {
+  const text = s.toLowerCase();
+  if (text.includes('cameroon')) return 'Cameroon';
+  if (text.includes('africa') || text.includes('pan-african')) return 'Africa';
+  if (text.includes('global') || text.includes('worldwide') || text.includes('any country')) return 'Global';
+  const countries = ['nigeria', 'kenya', 'ghana', 'south africa', 'uganda', 'rwanda'];
+  for (const c of countries) {
+    if (text.includes(c)) return c.charAt(0).toUpperCase() + c.slice(1);
+  }
+  return 'Africa / Global';
+}
+
+/**
+ * Determine if an opportunity is remote/online.
+ */
+function isRemote(op) {
+  const text = ((op.title || '') + ' ' + (op.snippet || '') + ' ' + (op.location || '')).toLowerCase();
+  return text.includes('remote') || text.includes('online') || text.includes('virtual') || text.includes('anywhere');
+}
+
+/**
+ * Determine if an opportunity matches a given location string.
+ */
+function matchesLocation(op, locationStr) {
+  if (!locationStr) return true;
+  const text = ((op.title || '') + ' ' + (op.snippet || '') + ' ' + (op.location || '')).toLowerCase();
+  const loc = locationStr.toLowerCase();
+  // Match city, region, or country
+  return text.includes(loc);
+}
+
+/**
+ * Deterministic shuffle using a string seed.
+ * Ensures different users / refreshes see a different ordering.
+ */
+function seededShuffle(arr, seed) {
+  const result = [...arr];
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) {
+    h = ((h << 5) - h + seed.charCodeAt(i)) | 0;
+  }
+  for (let i = result.length - 1; i > 0; i--) {
+    h = ((h * 1664525) + 1013904223) | 0;
+    const j = Math.abs(h) % (i + 1);
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
+}
+
 // ── Search providers with automatic failover ─────────────────────────────────
 
-async function trySerp(q) {
+async function trySerp(q, start = 0) {
   try {
-    const url = `https://serpapi.com/search.json?q=${encodeURIComponent(q)}&gl=cm&hl=en&num=10&api_key=${SERP_API_KEY}`;
+    const url = `https://serpapi.com/search.json?q=${encodeURIComponent(q)}&gl=cm&hl=en&num=10&start=${start}&api_key=${SERP_API_KEY}`;
     const r = await fetch(url, { signal: AbortSignal.timeout(7000) });
     if (!r.ok) {
       console.warn(`[SERP] HTTP ${r.status} — switching to Serper`);
       return null;
     }
     const d = await r.json();
-    // SerpAPI returns HTTP 200 with an error field when quota is exceeded
     if (d.error) {
       console.warn('[SERP] quota/error:', d.error, '— switching to Serper');
       return null;
@@ -88,12 +156,12 @@ async function trySerp(q) {
   }
 }
 
-async function trySerper(q) {
+async function trySerper(q, start = 0) {
   try {
     const r = await fetch('https://google.serper.dev/search', {
       method: 'POST',
       headers: { 'X-API-KEY': SERPER_KEY, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ q, gl: 'cm', hl: 'en', num: 10 }),
+      body: JSON.stringify({ q, gl: 'cm', hl: 'en', num: 10, start }),
       signal: AbortSignal.timeout(7000),
     });
     if (!r.ok) return null;
@@ -107,19 +175,20 @@ async function trySerper(q) {
   } catch (e) { console.warn('[Serper] fetch error:', e.message); return null; }
 }
 
-async function fetchFromSearch(tag) {
+async function fetchFromSearch(tag, educationLevel = '', age = 0, start = 0) {
+  const ed = educationLevel ? educationLevel.toLowerCase() : '';
+  const ageQuery = age > 0 ? `for ${age} year olds` : '';
   const queries = [
-    `${tag} scholarships internships for African students 2026`,
-    `${tag} opportunities Cameroon 2026`,
-    `${tag} competitions global 2026`,
+    `${tag} ${ed} scholarships internships for African students 2026`,
+    `${tag} opportunities Cameroon ${ed} 2026`,
+    `${tag} fully-funded ${ed} program Africa 2026 ${ageQuery}`,
   ];
   const all = [];
   for (const q of queries) {
-    // Try SerpAPI → Serper → skip
-    let results = await trySerp(q);
+    let results = await trySerp(q, start);
     if (!results) {
       console.log(`[Search] SerpAPI failed for "${q}", trying Serper…`);
-      results = await trySerper(q);
+      results = await trySerper(q, start);
     }
     if (!results) console.log(`[Search] Both APIs failed for "${q}", using static library.`);
     if (results) all.push(...results);
@@ -130,12 +199,56 @@ async function fetchFromSearch(tag) {
 // ── Auto-ensure static seed exists ───────────────────────────────────────────
 async function ensureSeeded() {
   if (seeded) return;
-  const { count } = await supabase.from('lp_tag_cache').select('id', { count: 'exact', head: true });
-  if (!count || count === 0) {
-    console.log('[Seed] Cache empty — seeding static library…');
-    await seedOpportunities();
+  try {
+    const { count } = await supabase.from('lp_tag_cache').select('id', { count: 'exact', head: true });
+    if (!count || count === 0) {
+      console.log('[Seed] Cache empty — seeding static library…');
+      await seedOpportunities();
+    }
+  } catch (e) {
+    console.warn('[Seed] ensureSeeded check failed:', e.message);
   }
   seeded = true;
+}
+
+// ── Background live-search cache refresh (fire-and-forget, never blocks response) ──
+function triggerBackgroundRefresh(tags, educationLevel, age) {
+  if (!SERPER_KEY && !SERP_API_KEY) return;
+  setImmediate(async () => {
+    for (const tag of tags.slice(0, 3)) { // limit to top 3 tags to keep it sane
+      try {
+        const rawResults = await fetchFromSearch(tag, educationLevel, age, 0);
+        if (!rawResults.length) continue;
+        const now = new Date();
+        const { data: cacheRow } = await supabase.from('lp_tag_cache').select('results').eq('tag', tag).maybeSingle();
+        let existing = [];
+        try { existing = JSON.parse(cacheRow?.results || '[]'); } catch {}
+        const staticResults = existing.filter(o => o.id?.startsWith('static-'));
+        const liveMapped = rawResults.filter(r => r.link && r.title).map(r => {
+          const hash = Buffer.from(r.link).toString('base64').replace(/[^a-zA-Z0-9]/g, '').slice(0, 16);
+          return {
+            id: `live-${tag}-${hash}`,
+            title: r.title, link: r.link, snippet: r.snippet, description: r.snippet,
+            source: r.source, tag, category: detectCategory(r.title, r.snippet),
+            deadline: extractDeadline(r.snippet), eligibility: extractEligibility(r.snippet),
+            benefits: extractBenefits(r.snippet), location: extractLocation(r.snippet),
+            amount: extractAmount(r.title + ' ' + r.snippet),
+            degree_level: extractDegreeLevel(r.title + ' ' + r.snippet),
+            country_focus: extractCountryFocus(r.title + ' ' + r.snippet),
+            verified: false,
+          };
+        }).filter(op => isSpecificOpportunity(op));
+        const merged = filterOpportunities([...staticResults, ...liveMapped]);
+        await supabase.from('lp_tag_cache').upsert(
+          { tag, results: JSON.stringify(merged), cached_at: now.toISOString() },
+          { onConflict: 'tag' }
+        );
+        console.log(`[BG Refresh] Updated cache for tag: ${tag} (${liveMapped.length} live results)`);
+      } catch (e) {
+        console.warn(`[BG Refresh] Failed for tag ${tag}:`, e.message);
+      }
+    }
+  });
 }
 
 // ── Main handler ─────────────────────────────────────────────────────────────
@@ -148,19 +261,47 @@ export default async function handler(req, res) {
   try {
     const token = req.headers.authorization?.replace('Bearer ', '');
     if (!token) return res.status(401).json({ error: 'Unauthorized' });
-    const decoded = jwt.verify(token, JWT_SECRET);
+    
+    let decoded;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (err) {
+      return res.status(401).json({ error: 'Unauthorized', details: err.message });
+    }
 
-    const { data: user } = await supabase
-      .from('lp_users').select('interests, education_level, age').eq('id', decoded.userId).single();
+    // ── Parallel fetch: user profile + user settings + verified opps + seed check ──
+    const [
+      { data: user },
+      { data: userExtra },
+    ] = await Promise.all([
+      supabase.from('lp_users').select('interests, education_level, age, location, region').eq('id', decoded.userId).single(),
+      supabase.from('lp_user_extra').select('settings').eq('user_id', decoded.userId).single(),
+    ]);
     if (!user) return res.status(404).json({ error: 'User not found' });
 
-    // Ensure static seed exists
+    const userSettings = userExtra?.settings || {};
+
+    // Ensure static seed exists (fast — only runs once per cold start)
     await ensureSeeded();
 
     const interests = JSON.parse(user.interests || '[]');
-    const { page = 1, category = 'all', tag: reqTag } = req.query;
+    const {
+      page = 1,
+      category = 'all',
+      tag: reqTag,
+      refresh,
+      search,
+      location_mode,
+      user_location,
+      nonce = ''
+    } = req.query;
+
+    const forceRefresh = refresh === '1' || refresh === 'true';
     const pageNum  = parseInt(page) || 1;
     const pageSize = 12;
+
+    const effectiveLocationMode = location_mode || userSettings.location_mode || 'all';
+    const effectiveUserLocation = user_location || userSettings.user_location || user.location || user.region || '';
 
     const effectiveTags = reqTag
       ? [reqTag]
@@ -168,52 +309,66 @@ export default async function handler(req, res) {
         ? interests.slice(0, 10)
         : ['technology','business','engineering','education','medicine','research','entrepreneurship','data_science','arts','agriculture'];
 
-    const now         = new Date();
+    const now = new Date();
     const cacheExpiry = new Date(now.getTime() - CACHE_HOURS * 60 * 60 * 1000);
+
+    // ── Parallel fetch: ALL tag cache rows + verified posts in ONE round-trip ─
+    const [
+      { data: allCacheRows },
+      { data: verifiedPosts },
+    ] = await Promise.all([
+      supabase.from('lp_tag_cache').select('tag, results, cached_at').in('tag', effectiveTags),
+      supabase.from('lp_verified_opps').select('*').eq('verified', true).order('created_at', { ascending: false }).limit(60),
+    ]);
+
     let allOpps = [];
 
+    // ── Community-verified opportunities ──────────────────────────────────────
+    for (const v of verifiedPosts || []) {
+      if (effectiveTags.length && v.tag && !effectiveTags.includes(v.tag)) continue;
+      allOpps.push({
+        id: `verified-${v.id}`,
+        title: v.title,
+        link: v.link,
+        snippet: v.description,
+        description: v.description,
+        source: v.source || v.user_name || 'Community',
+        tag: v.tag || 'general',
+        category: v.category,
+        deadline: v.deadline,
+        eligibility: v.eligibility,
+        benefits: v.benefits,
+        location: v.location,
+        verified: true,
+        upvotes: v.upvotes,
+      });
+    }
+
+    // ── Process cached tag results (already loaded in one query above) ────────
+    const cacheByTag = {};
+    for (const row of allCacheRows || []) {
+      cacheByTag[row.tag] = row;
+    }
+
+    let needsLiveRefresh = false;
+
     for (const tag of effectiveTags) {
-      // Check cache
-      const { data: cached } = await supabase
-        .from('lp_tag_cache').select('*').eq('tag', tag)
-        .gte('cached_at', cacheExpiry.toISOString()).maybeSingle();
-
-      let tagResults = [];
-      if (cached) {
-        try { tagResults = JSON.parse(cached.results || '[]'); } catch {}
-      } else {
-        // Fetch live from search APIs
-        console.log(`[Search] Fetching live for tag: ${tag}`);
-        const rawResults = (SERPER_KEY || SERP_API_KEY) ? await fetchFromSearch(tag) : [];
-        tagResults = rawResults.filter(r => r.link && r.title).map((r, i) => {
-          const hash = Buffer.from(r.link).toString('base64').replace(/[^a-zA-Z0-9]/g, '').slice(0, 16);
-          return {
-            id: `live-${tag}-${hash}`,
-            title: r.title, link: r.link, snippet: r.snippet, description: r.snippet,
-            source: r.source, tag, category: detectCategory(r.title, r.snippet),
-            deadline: extractDeadline(r.snippet), eligibility: extractEligibility(r.snippet),
-            benefits: extractBenefits(r.snippet), location: extractLocation(r.snippet),
-            verified: false,
-          };
-        });
-
-        // Get static opps for this tag
-        const { data: staticCache } = await supabase.from('lp_tag_cache').select('results').eq('tag', tag).maybeSingle();
-        if (staticCache) {
-          try { 
-            const staticOpps = JSON.parse(staticCache.results || '[]').filter(o => o.id?.startsWith('static-'));
-            tagResults = [...tagResults, ...staticOpps];
-          } catch {}
-        }
-
-        // Save to cache
-        await supabase.from('lp_tag_cache').upsert(
-          { tag, results: JSON.stringify(tagResults), cached_at: now.toISOString() },
-          { onConflict: 'tag' }
-        );
+      const cacheRow = cacheByTag[tag];
+      let cachedResults = [];
+      if (cacheRow) {
+        try { cachedResults = JSON.parse(cacheRow.results || '[]'); } catch {}
       }
 
-      // Filter out expired ones
+      const cacheIsFresh = cacheRow && !forceRefresh &&
+        new Date(cacheRow.cached_at) >= cacheExpiry;
+
+      // If cache is stale or empty, flag for background refresh
+      if (!cacheIsFresh) needsLiveRefresh = true;
+
+      // Serve from cache immediately (static + previous live results)
+      const tagResults = filterOpportunities(cachedResults);
+
+      // Filter out expired deadlines
       const active = tagResults.filter(op => {
         if (!op.deadline) return true;
         try {
@@ -222,22 +377,21 @@ export default async function handler(req, res) {
         } catch { return true; }
       });
 
-      // Personalization Score: Boost Cameroon, Africa, and multiple interest matches
+      // Personalization scoring
       const scored = active.map(op => {
         let score = 0;
-        const text = (op.title + ' ' + op.snippet).toLowerCase();
+        const text = (op.title + ' ' + (op.snippet || '')).toLowerCase();
         if (text.includes('cameroon') || text.includes('cmr')) score += 100;
         if (text.includes('africa')) score += 30;
-        // Check for other user interests
         interests.forEach(interest => {
           if (text.includes(interest.toLowerCase())) score += 20;
         });
         return { ...op, _score: score };
       });
 
-      // Filter out common noise
+      // Filter noise
       const clean = scored.filter(op => {
-        const t = (op.title + ' ' + op.snippet).toLowerCase();
+        const t = (op.title + ' ' + (op.snippet || '')).toLowerCase();
         const noise = ['privacy policy', 'terms of service', 'login', 'signup', 'forgot password', 'cookies', '404 not found'];
         return !noise.some(n => t.includes(n));
       });
@@ -245,21 +399,23 @@ export default async function handler(req, res) {
       allOpps.push(...clean);
     }
 
-    // 2. Strict Filtering (Interests, Age, Education)
+    // ── Trigger background live search refresh (non-blocking) ─────────────────
+    if (needsLiveRefresh || forceRefresh) {
+      triggerBackgroundRefresh(effectiveTags, user.education_level, user.age);
+    }
+
+    // ── Age & education filters ────────────────────────────────────────────────
     const userAge = user.age || 0;
     const userEd  = (user.education_level || '').toLowerCase();
     
     const filtered = allOpps.filter(op => {
       const text = ((op.title||'') + ' ' + (op.snippet||'') + ' ' + (op.eligibility||'')).toLowerCase();
       
-      // Age filter
       if (userAge > 0) {
         const m = text.match(/age[d]?\s*(\d+)\s*[-–to]+\s*(\d+)/i);
         if (m && (userAge < parseInt(m[1]) || userAge > parseInt(m[2]))) return false;
       }
 
-      // Education level filter
-      // If user is High School, they shouldn't see PhD opportunities
       if (userEd) {
         if (userEd.includes('high school')) {
           if (text.includes('phd') || text.includes('graduate student') || text.includes('masters degree')) return false;
@@ -267,40 +423,65 @@ export default async function handler(req, res) {
         if (userEd.includes('undergraduate') || userEd.includes('bachelor')) {
           if (text.includes('phd') || text.includes('postdoc')) return false;
         }
-        // If the opportunity specifically asks for a level the user doesn't have
-        const levels = ['high school', 'undergraduate', 'bachelor', 'masters', 'phd', 'postdoc'];
-        for (const l of levels) {
-          if (text.includes(l) && !userEd.includes(l)) {
-             // If user is 'masters' and op says 'phd only', filter it
-             if (l === 'phd' && !userEd.includes('phd')) return false;
-             if (l === 'masters' && userEd.includes('undergraduate')) return false;
-          }
-        }
       }
 
       return true;
     });
 
-    // Deduplicate
-    const seen = new Set();
-    const unique = filtered.filter(op => {
-      if (!op.link || seen.has(op.link)) return false;
-      seen.add(op.link); return true;
-    });
+    // ── Location filter ───────────────────────────────────────────────────────
+    let locationFiltered = filtered;
+    if (effectiveLocationMode === 'remote') {
+      locationFiltered = filtered.filter(op => {
+        const text = ((op.title||'') + ' ' + (op.snippet||'') + ' ' + (op.location||'')).toLowerCase();
+        return text.includes('remote') || text.includes('online') || text.includes('virtual')
+          || text.includes('anywhere') || text.includes('global') || text.includes('worldwide')
+          || text.includes('international') || !op.location;
+      });
+    } else if (effectiveLocationMode === 'onsite' && effectiveUserLocation) {
+      locationFiltered = filtered.filter(op => {
+        const text = ((op.title||'') + ' ' + (op.snippet||'') + ' ' + (op.location||'')).toLowerCase();
+        const loc = effectiveUserLocation.toLowerCase();
+        return text.includes(loc) || text.includes('global') || text.includes('worldwide')
+          || text.includes('international') || text.includes('all countries') || !op.location;
+      });
+    }
 
-    // Sort by score (descending)
-    unique.sort((a, b) => (b._score || 0) - (a._score || 0));
+    const unique = filterOpportunities(locationFiltered);
 
-    // Category filter
-    const catFiltered = category === 'all' ? unique : unique.filter(op => op.category === category);
+    // ── Shuffle for variety per refresh nonce ────────────────────────────────
+    const verifiedOpps   = unique.filter(op => op.verified);
+    const unverifiedOpps = unique.filter(op => !op.verified);
+    const shuffleSeed    = `${nonce}-${decoded.userId}-p${pageNum}`;
+    const shuffled       = [...verifiedOpps, ...seededShuffle(unverifiedOpps, shuffleSeed)];
 
+    // ── Search filter ─────────────────────────────────────────────────────────
+    let searched = shuffled;
+    if (search && search.trim()) {
+      const q = search.toLowerCase();
+      searched = shuffled.filter(op => 
+        (op.title || '').toLowerCase().includes(q) || 
+        (op.snippet || '').toLowerCase().includes(q) || 
+        (op.eligibility || '').toLowerCase().includes(q) ||
+        (op.description || '').toLowerCase().includes(q)
+      );
+    }
+
+    // ── Category filter ───────────────────────────────────────────────────────
+    const catFiltered = category === 'all' ? searched : searched.filter(op => op.category === category);
+
+    // ── Pagination ────────────────────────────────────────────────────────────
     const start = (pageNum - 1) * pageSize;
+    const pageItems = catFiltered.slice(start, start + pageSize);
+
+    const hasMore = start + pageSize < catFiltered.length;
+
     return res.status(200).json({
-      items: catFiltered.slice(start, start + pageSize),
+      items: pageItems,
       total: catFiltered.length,
-      hasMore: start + pageSize < catFiltered.length,
+      hasMore,
       page: pageNum,
-      sources: { serp: true, serper: true, static: true },
+      location_mode: effectiveLocationMode,
+      sources: { cached: true, refreshing: needsLiveRefresh || forceRefresh },
     });
 
   } catch (err) {
@@ -308,3 +489,4 @@ export default async function handler(req, res) {
     res.status(500).json({ error: err.message });
   }
 }
+
