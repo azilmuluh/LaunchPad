@@ -1,0 +1,109 @@
+# Implementation Plan
+
+- [ ] 1. Write bug condition exploration test
+  - **Property 1: Bug Condition** - Refresh, Search, and Infinite Scroll Bugs
+  - **CRITICAL**: This test MUST FAIL on unfixed code - failure confirms the bugs exist
+  - **DO NOT attempt to fix the test or the code when it fails**
+  - **NOTE**: This test encodes the expected behavior - it will validate the fix when it passes after implementation
+  - **GOAL**: Surface counterexamples that demonstrate the three bugs exist
+  - **Scoped PBT Approach**: Test concrete failing cases for refresh button clicks, search input changes, and scroll events to 70%+ depth
+  - Test implementation details from Bug Condition in design:
+    - Refresh Button: Click refresh button twice, verify API is called with different nonce values on each click
+    - Search Bar: Type "test" in search input, wait 500ms, verify API is called with `search=test` parameter
+    - Search Clear: Type "test", then clear search, verify full unfiltered list is reloaded
+    - Infinite Scroll: Render component with 15 blips, scroll to 75% depth, verify page 2 is fetched
+    - HasMore Logic: Mock API to return 5 blips, scroll to bottom twice, verify loading stops after first load
+  - The test assertions should match the Expected Behavior Properties from design:
+    - Refresh generates new nonce and calls API with `refresh=true`
+    - Search triggers API call with search parameter after debounce
+    - Scroll to 70%+ triggers next page load when hasMore is true
+  - Run test on UNFIXED code
+  - **EXPECTED OUTCOME**: Test FAILS (this is correct - it proves the bugs exist)
+  - Document counterexamples found to understand root cause:
+    - Refresh clicks use same nonce value
+    - Search input changes do not trigger API calls
+    - Scroll events do not load more pages
+  - Mark task complete when test is written, run, and failures are documented
+  - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8_
+
+- [~] 2. Write preservation property tests (BEFORE implementing fix)
+  - **Property 2: Preservation** - Non-Buggy Interactions Remain Unchanged
+  - **IMPORTANT**: Follow observation-first methodology
+  - Observe behavior on UNFIXED code for non-buggy inputs:
+    - Like Button: Click like, observe optimistic update and API call
+    - Comment Button: Open comments, observe fetch and render behavior
+    - Share Button: Click share, observe URL generation and share API behavior
+    - Delete Button: Click delete (as creator), observe confirmation and removal
+    - Initial Load: Mount component, observe first page fetch with correct parameters
+    - Video Autoplay: Scroll between blips, observe active index tracking
+    - Failed Videos: Trigger video load error, observe fallback UI with retry option
+  - Write property-based tests capturing observed behavior patterns from Preservation Requirements in design:
+    - For all like button clicks, verify optimistic update and API sync behavior
+    - For all comment panel opens, verify fetch and display behavior
+    - For all share button clicks, verify URL generation behavior
+    - For all delete button clicks (as creator), verify confirmation and removal
+    - For initial page load, verify first page fetch with default parameters
+    - For scroll between blips, verify active index updates correctly
+    - For failed video loads, verify fallback error UI displays
+  - Property-based testing generates many test cases for stronger guarantees
+  - Run tests on UNFIXED code
+  - **EXPECTED OUTCOME**: Tests PASS (this confirms baseline behavior to preserve)
+  - Mark task complete when tests are written, run, and passing on unfixed code
+  - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 3.8_
+
+- [ ] 3. Fix for Blips Page Bugs (Refresh, Search, Infinite Scroll)
+
+  - [~] 3.1 Implement the fixes in BlipsPage component
+    - **File**: `src/pages/BlipsPage.tsx`
+    - Add useEffect hook to listen for debouncedSearch changes:
+      - Reset page to 1, hasMore to true, blips to empty array
+      - Generate new nonce and call `fetchBlips(1, false, debouncedSearch, newNonce())`
+      - Add dependency array: `[debouncedSearch]`
+    - Verify handleRefresh function logic:
+      - Confirm new nonce is generated and passed directly to fetchBlips
+      - Verify `fetchBlips(1, true, debouncedSearch, n)` is called with new nonce `n`
+      - Confirm refresh=true parameter triggers proper API behavior
+    - Verify onScroll handler logic:
+      - Confirm `loadMore()` is called when scroll percentage >= 0.7
+      - Verify conditions `hasMore && !loadingMore && !loading` are correctly evaluated
+      - Ensure page counter increments before fetchBlips call
+    - Verify hasMore state management:
+      - Confirm `setHasMore(false)` when API returns < 10 blips or empty array
+      - Check logic in fetchBlips: `if (!data || data.length === 0 || data.length < 10)`
+    - Verify deduplication logic:
+      - Confirm duplicate filtering by both `id` and `embed_id` when appending pages
+      - Check existing logic in fetchBlips for pageNum > 1
+    - _Bug_Condition: isBugCondition(input) from design where input is refresh button click, search input change, or scroll event to 70%+ depth_
+    - _Expected_Behavior: expectedBehavior(result) from design - refresh generates new nonce, search triggers API call, scroll loads next page_
+    - _Preservation: Preservation Requirements from design - likes, comments, shares, deletes, initial load, video autoplay, error handling remain unchanged_
+    - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 3.8_
+
+  - [~] 3.2 Verify bug condition exploration test now passes
+    - **Property 1: Expected Behavior** - Refresh, Search, and Infinite Scroll Work Correctly
+    - **IMPORTANT**: Re-run the SAME test from task 1 - do NOT write a new test
+    - The test from task 1 encodes the expected behavior
+    - When this test passes, it confirms the expected behavior is satisfied:
+      - Refresh button generates new nonce on each click
+      - Search input triggers API call after debounce
+      - Scroll to 70%+ loads next page when hasMore is true
+      - HasMore correctly stops loading when fewer than 10 blips returned
+    - Run bug condition exploration test from step 1
+    - **EXPECTED OUTCOME**: Test PASSES (confirms bugs are fixed)
+    - _Requirements: Expected Behavior Properties from design (2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8)_
+
+  - [~] 3.3 Verify preservation tests still pass
+    - **Property 2: Preservation** - Non-Buggy Interactions Still Work
+    - **IMPORTANT**: Re-run the SAME tests from task 2 - do NOT write new tests
+    - Run preservation property tests from step 2:
+      - Like button behavior unchanged
+      - Comment panel behavior unchanged
+      - Share button behavior unchanged
+      - Delete button behavior unchanged
+      - Initial page load behavior unchanged
+      - Video autoplay tracking behavior unchanged
+      - Failed video fallback behavior unchanged
+    - **EXPECTED OUTCOME**: Tests PASS (confirms no regressions)
+    - Confirm all tests still pass after fix (no regressions)
+
+- [~] 4. Checkpoint - Ensure all tests pass
+  - Ensure all tests pass, ask the user if questions arise.

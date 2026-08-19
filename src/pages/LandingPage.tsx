@@ -29,8 +29,9 @@ export default function LandingPage() {
   return (
     <main className="min-h-screen" style={{ background: 'var(--bg)' }}>
       <SEO 
-        title={t('hero_title')}
-        description={t('hero_subtitle')}
+        title="LaunchPad Community — Scholarships & Opportunities for African Youth"
+        description="LaunchPad Community is a youth-led platform helping Cameroonian and African students find verified scholarships, internships, competitions, and events. Join free."
+        keywords="LaunchPad, LaunchPad Community, launchpadcm, scholarships Cameroon, African youth opportunities"
         canonical="/"
       />
 

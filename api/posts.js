@@ -67,8 +67,10 @@ export default async function handler(req, res) {
         const interests = interestParam.split(',').map(s => s.trim()).filter(Boolean);
         const relevantCategories = new Set();
         interests.forEach(int => {
-          const cats = INTEREST_TO_CATEGORY[int];
-          if (cats) cats.forEach(c => relevantCategories.add(c));
+          const cats = INTEREST_TO_CATEGORY[int] || ['tip', 'opportunity', 'win', 'thought'];
+          cats.forEach(c => relevantCategories.add(c));
+          // Always allow 'thought' posts in the community feed
+          relevantCategories.add('thought');
         });
         if (relevantCategories.size > 0) {
           // Include posts that match OR posts with no category (general)
@@ -140,6 +142,32 @@ export default async function handler(req, res) {
         if (st) await supabase.from('lp_streaks').update({ total_xp: newXP, level: Math.floor(newXP / 500) + 1, posts_made: (st.posts_made || 0) + 1 }).eq('user_id', userId);
         else await supabase.from('lp_streaks').insert({ user_id: userId, total_xp: 20, level: 1, current_streak: 1, longest_streak: 1, posts_made: 1 });
       } catch {}
+
+      // If it's a win, notify connections
+      if (category === 'win') {
+        try {
+          const { data: conns } = await supabase.from('lp_connections')
+            .select('*')
+            .or(`requester_id.eq.${userId},addressee_id.eq.${userId}`)
+            .eq('status', 'accepted');
+            
+          const peerIds = (conns || []).map(c => c.requester_id === userId ? c.addressee_id : c.requester_id);
+          
+          if (peerIds.length > 0) {
+            const notifications = peerIds.map(pid => ({
+              user_id: pid,
+              type: 'win',
+              title: 'Connection Win!',
+              content: `${user.full_name} shared a win: "${content.substring(0, 50)}${content.length > 50 ? '...' : ''}"`,
+              data: { post_id: post.id, author_id: userId },
+              read: false
+            }));
+            await supabase.from('lp_notifications').insert(notifications);
+          }
+        } catch (e) {
+          console.error('Failed to notify connections of win', e);
+        }
+      }
 
       return res.status(201).json({ ...post, liked_by_me: false });
     }

@@ -1,22 +1,38 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   ExternalLink, Bookmark, BookmarkCheck, Clock,
   ChevronDown, ChevronUp, Users, Gift, MapPin, Building2, Sparkles, ArrowUpRight,
-  Heart, MessageCircle, Share2, Send, X, Loader2
+  Heart, MessageCircle, Share2, Send, X, Loader2, GraduationCap, Briefcase, Trophy, PartyPopper, Rocket, DollarSign, CheckCircle
 } from 'lucide-react';
 import RoadmapModal from './RoadmapModal';
+import ApplicationPrepModal from './ApplicationPrepModal';
 import { apiRequest } from '../lib/auth';
 import { useI18n } from '../lib/i18n';
 
-const CAT: Record<string, { color: string; bg: string; border: string; emoji: string; label: string }> = {
-  scholarship: { color: '#1D4ED8', bg: '#EFF6FF', border: '#BFDBFE', emoji: '\uD83C\uDF93', label: 'Scholarship' },
-  internship:  { color: '#065F46', bg: '#ECFDF5', border: '#A7F3D0', emoji: '\uD83D\uDCBC', label: 'Internship'  },
-  competition: { color: '#92400E', bg: '#FFFBEB', border: '#FDE68A', emoji: '\uD83C\uDFC6', label: 'Competition' },
-  event:       { color: '#5B21B6', bg: '#F5F3FF', border: '#DDD6FE', emoji: '\uD83C\uDF89', label: 'Event'       },
-  job:         { color: '#9A3412', bg: '#FFF7ED', border: '#FED7AA', emoji: '\uD83D\uDE80', label: 'Job'         },
-  grant:       { color: '#14532D', bg: '#F0FDF4', border: '#BBF7D0', emoji: '\uD83D\uDCB0', label: 'Grant'       },
-  opportunity: { color: '#374151', bg: '#F9FAFB', border: '#E5E7EB', emoji: '\u2728',       label: 'Opportunity' },
+const CAT: Record<string, { color: string; bg: string; border: string; icon: React.ReactNode; label: string }> = {
+  scholarship: { color: '#1D4ED8', bg: '#EFF6FF', border: '#BFDBFE', icon: <GraduationCap size={16} />, label: 'Scholarship' },
+  internship:  { color: '#065F46', bg: '#ECFDF5', border: '#A7F3D0', icon: <Briefcase size={16} />,     label: 'Internship'  },
+  competition: { color: '#92400E', bg: '#FFFBEB', border: '#FDE68A', icon: <Trophy size={16} />,        label: 'Competition' },
+  event:       { color: '#5B21B6', bg: '#F5F3FF', border: '#DDD6FE', icon: <PartyPopper size={16} />,   label: 'Event'       },
+  job:         { color: '#9A3412', bg: '#FFF7ED', border: '#FED7AA', icon: <Rocket size={16} />,        label: 'Job'         },
+  grant:       { color: '#14532D', bg: '#F0FDF4', border: '#BBF7D0', icon: <DollarSign size={16} />,    label: 'Grant'       },
+  opportunity: { color: '#374151', bg: '#F9FAFB', border: '#E5E7EB', icon: <Sparkles size={16} />,      label: 'Opportunity' },
 };
+
+// Unsplash image helper based on category/tag
+function getCoverImage(category: string, tag?: string): string {
+  const images: Record<string, string> = {
+    scholarship: 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=800&q=80', // University/education
+    internship: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=800&q=80',  // Team working
+    competition: 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=800&q=80',    // Trophy/success
+    event: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&q=80',       // Conference/event
+    job: 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=800&q=80',         // Laptop/work
+    grant: 'https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?w=800&q=80',       // Money/funding
+  };
+  
+  return images[category] || images.scholarship;
+}
 
 function Bullets({ items, color }: { items: string[]; color: string }) {
   return (
@@ -31,8 +47,10 @@ function Bullets({ items, color }: { items: string[]; color: string }) {
 }
 
 export default function OpportunityCard({ item, isBookmarked, onBookmark, user }: any) {
+  const navigate = useNavigate();
   const [expanded,    setExpanded]    = useState(false);
   const [showRoadmap, setShowRoadmap] = useState(false);
+  const [showApplication, setShowApplication] = useState(false);
   const [likes, setLikes] = useState(item.upvotes || 0);
   const [liked, setLiked] = useState(false);
   const [showComments, setShowComments] = useState(false);
@@ -41,6 +59,9 @@ export default function OpportunityCard({ item, isBookmarked, onBookmark, user }
   const [loadingComments, setLoadingComments] = useState(false);
   const [postingComment, setPostingComment] = useState(false);
   const [applyCount, setApplyCount] = useState(0);
+  // Lifecycle-aware navigation state (Requirements 5.1–5.6, 13.1–13.2)
+  const [navigating, setNavigating] = useState(false);
+  const [navError, setNavError] = useState<string | null>(null);
   const { t } = useI18n();
 
   useEffect(() => {
@@ -71,6 +92,66 @@ export default function OpportunityCard({ item, isBookmarked, onBookmark, user }
         body: JSON.stringify({ action: 'track_apply', item_id: item.id })
       });
     } catch (e) { console.error(e); }
+  };
+
+  /**
+   * Lifecycle-aware "View & Apply" handler.
+   *
+   * 1. Check if an opportunity detail page already exists (GET)
+   * 2. If not, create one (POST) — idempotent on the server side
+   * 3. Navigate to the page URL
+   * 4. Fall back to legacy /apply route if lifecycle API is unavailable
+   *
+   * Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 13.1, 13.2
+   */
+  const handleNavigateToDetail = async () => {
+    // Prevent multiple concurrent clicks (race condition guard — Req 5.6)
+    if (navigating) return;
+
+    setNavigating(true);
+    setNavError(null);
+
+    // Store opportunity data in localStorage for downstream pages
+    localStorage.setItem(`lp_opp_${item.id}`, JSON.stringify(item));
+
+    try {
+      // Step 1: Check if page already exists
+      const checkRes = await apiRequest(`/api/opportunities/${encodeURIComponent(item.id)}/page`);
+
+      if (checkRes.ok) {
+        // Page exists — navigate to it directly (Req 5.1)
+        const pageData = await checkRes.json();
+        navigate(pageData.url || `/opportunities/${item.category || 'opportunity'}/${pageData.slug}`);
+        return;
+      }
+
+      if (checkRes.status === 404) {
+        // Page does not exist — create it (Req 5.2, 5.3)
+        const createRes = await apiRequest(`/api/opportunities/${encodeURIComponent(item.id)}/page`, {
+          method: 'POST',
+          body: JSON.stringify({
+            title:    item.title    || '',
+            category: item.category || 'opportunity',
+            deadline: item.deadline || null,
+          }),
+        });
+
+        if (createRes.ok) {
+          const pageData = await createRes.json();
+          navigate(pageData.url || `/opportunities/${item.category || 'opportunity'}/${pageData.slug}`);
+          return;
+        }
+      }
+
+      // If lifecycle API returns a non-OK / non-404 status (e.g., feature disabled),
+      // fall back gracefully to the legacy apply route (Req 5.4)
+      navigate(`/opportunities/${item.id}/apply`);
+    } catch (_err) {
+      // Network error or API unavailable — fall back to legacy route
+      navigate(`/opportunities/${item.id}/apply`);
+    } finally {
+      setNavigating(false);
+    }
   };
 
   const handleLike = async () => {
@@ -124,11 +205,22 @@ export default function OpportunityCard({ item, isBookmarked, onBookmark, user }
   const desc = item.description || item.snippet || '';
   const eligs = (item.eligibility || '').split('•').map((s: string) => s.trim()).filter(Boolean);
   const bens  = (item.benefits   || '').split('•').map((s: string) => s.trim()).filter(Boolean);
-  const hasExtra = eligs.length > 0 || bens.length > 0 || desc.length > 180;
+  const hasExtra = eligs.length > 0 || bens.length > 0 || desc.length > 180 || (item.application_steps && item.application_steps.length > 0);
 
   return (
     <>
       <article id={`opp-${item.id}`} className="nb-card overflow-hidden flex flex-col transition-transform hover:-translate-y-0.5">
+        {/* Cover Image */}
+        <div className="relative h-32 overflow-hidden" style={{ background: cfg.bg }}>
+          <img 
+            src={getCoverImage(item.category || 'scholarship', item.tag)} 
+            alt={item.title}
+            className="w-full h-full object-cover opacity-90"
+            loading="lazy"
+          />
+          <div className="absolute inset-0" style={{ background: `linear-gradient(to bottom, transparent, ${cfg.bg})` }} />
+        </div>
+
         {/* Top accent stripe */}
         <div className="h-2" style={{ background: cfg.color }} />
 
@@ -136,12 +228,12 @@ export default function OpportunityCard({ item, isBookmarked, onBookmark, user }
           {/* Row 1: badge + bookmark */}
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="nb-badge" style={{ color: cfg.color, borderColor: cfg.color, background: cfg.bg }}>
-                {cfg.emoji} {t(item.category || 'opportunity')}
+              <span className="nb-badge flex items-center gap-1.5" style={{ color: cfg.color, borderColor: cfg.color, background: cfg.bg }}>
+                {cfg.icon} {t(item.category || 'opportunity')}
               </span>
               {item.verified && (
-                <span className="nb-badge" style={{ color: '#065F46', borderColor: '#065F46', background: '#ECFDF5' }}>
-                  ✓ {t('verified')}
+                <span className="nb-badge flex items-center gap-1.5" style={{ color: '#065F46', borderColor: '#065F46', background: '#ECFDF5' }}>
+                  <CheckCircle size={12} /> {t('verified')}
                 </span>
               )}
               {item.tag && (
@@ -194,6 +286,25 @@ export default function OpportunityCard({ item, isBookmarked, onBookmark, user }
             )}
           </div>
 
+          {/* Quick Details Badges */}
+          <div className="flex flex-wrap gap-2">
+            {item.amount && (
+              <span className="nb-badge" style={{ color: '#047857', borderColor: '#A7F3D0', background: '#ECFDF5' }}>
+                💰 {item.amount}
+              </span>
+            )}
+            {item.degree_level && (
+              <span className="nb-badge" style={{ color: '#1D4ED8', borderColor: '#BFDBFE', background: '#EFF6FF' }}>
+                🎓 {item.degree_level}
+              </span>
+            )}
+            {item.country_focus && (
+              <span className="nb-badge" style={{ color: '#7C2D12', borderColor: '#FED7AA', background: '#FFF7ED' }}>
+                📍 {item.country_focus}
+              </span>
+            )}
+          </div>
+
           {/* Description */}
           <p className="text-sm font-medium leading-relaxed" style={{ color: 'var(--ink)' }}>
             {expanded || desc.length <= 180 ? desc : desc.slice(0, 180) + '...'}
@@ -218,6 +329,21 @@ export default function OpportunityCard({ item, isBookmarked, onBookmark, user }
                     <span className="text-xs font-black uppercase tracking-widest" style={{ color: '#065F46' }}>{t('benefits')}</span>
                   </div>
                   <Bullets items={bens} color="#065F46" />
+                </div>
+              )}
+              {item.application_steps && Array.isArray(item.application_steps) && item.application_steps.length > 0 && (
+                <div className="p-3 rounded-xl" style={{ background: '#FFFBEB', border: '2px solid #FDE68A' }}>
+                  <div className="flex items-center gap-1.5 mb-2">
+                    <Clock size={12} style={{ color: '#92400E' }} />
+                    <span className="text-xs font-black uppercase tracking-widest" style={{ color: '#92400E' }}>Application Steps</span>
+                  </div>
+                  <ul className="space-y-1.5">
+                    {item.application_steps.map((step: string, i: number) => (
+                      <li key={i} className="text-xs font-bold" style={{ color: '#92400E' }}>
+                        {step}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               )}
             </div>
@@ -261,30 +387,39 @@ export default function OpportunityCard({ item, isBookmarked, onBookmark, user }
           </div>
 
           {/* Actions */}
-          <div className="flex gap-2 pt-2" style={{ borderTop: '2px solid var(--border)' }}>
+          <div className="flex gap-2 pt-2 flex-wrap" style={{ borderTop: '2px solid var(--border)' }}>
+            {navError && (
+              <p className="w-full text-xs font-bold text-red-600 mb-1">{navError}</p>
+            )}
+            <button
+              id={`view-apply-${item.id}`}
+              onClick={handleNavigateToDetail}
+              disabled={navigating}
+              className="nb-btn flex-1 min-w-[120px] flex items-center justify-center gap-1.5 py-2 text-xs nb-btn-orange"
+              style={{ opacity: navigating ? 0.75 : 1, cursor: navigating ? 'wait' : 'pointer' }}
+              aria-label={navigating ? 'Opening opportunity page…' : 'View & Apply'}
+            >
+              {navigating
+                ? <><Loader2 size={11} className="animate-spin" /> Opening…</>
+                : <><ArrowUpRight size={11} /> View &amp; Apply</>
+              }
+            </button>
             <button onClick={() => setShowRoadmap(true)}
-              className="nb-btn flex-1 flex items-center justify-center gap-1.5 py-2 text-xs"
+              className="nb-btn flex-1 min-w-[100px] flex items-center justify-center gap-1.5 py-2 text-xs"
               style={{ background: '#FFF3EE', color: '#FF5C00', borderColor: '#FF5C00' }}>
               <Sparkles size={11} /> {t('roadmap')}
             </button>
-            {item.link ? (
-              <a href={item.link} target="_blank" rel="noopener noreferrer"
-                className="nb-btn flex-1 flex items-center justify-center gap-1.5 py-2 text-xs nb-btn-orange"
-                onClick={(e) => { e.stopPropagation(); trackApply(); }}>
-                {t('apply_now')} <ArrowUpRight size={11} />
-              </a>
-            ) : (
-              <div className="flex-1 flex items-center justify-center py-2 text-xs font-bold rounded-xl"
-                style={{ background: '#f0ede6', color: 'var(--muted)', border: '2px solid #e0ddd6' }}>
-                {t('no_link')}
-              </div>
-            )}
           </div>
+
         </div>
       </article>
 
       {showRoadmap && (
         <RoadmapModal opportunity={item} user={user} onClose={() => setShowRoadmap(false)} />
+      )}
+
+      {showApplication && user && (
+        <ApplicationPrepModal opportunity={item} user={user} onClose={() => setShowApplication(false)} />
       )}
 
       {/* COMMENTS DRAWER/SECTION */}

@@ -1,5 +1,6 @@
 import supabase from './_supabase.js';
 import jwt from 'jsonwebtoken';
+import { sendOneSignalNotification } from './_onesignal.js';
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
@@ -70,6 +71,33 @@ export default async function handler(req, res) {
 
       const { data, error } = await supabase.from('lp_messages').insert({ sender_id: me, receiver_id, content }).select().single();
       if (error) throw error;
+
+      // Create notification
+      const { data: meUser } = await supabase.from('lp_users').select('full_name').eq('id', me).single();
+      if (meUser) {
+        await supabase.from('lp_notifications').insert({
+          user_id: receiver_id,
+          type: 'message',
+          title: 'New Message',
+          content: `${meUser.full_name} sent you a message.`,
+          data: { sender_id: me, message_id: data.id },
+          read: false
+        });
+
+          // Send push notification
+          try {
+            await sendOneSignalNotification({
+              headings: 'New Message',
+              contents: `${meUser.full_name} sent you a message.`,
+              externalUserIds: [receiver_id],
+              userId: receiver_id,
+              category: 'community',
+              url: `${process.env.PUBLIC_APP_URL || ''}/network`,
+              data: { type: 'message', sender_id: me, message_id: data.id },
+            });
+          } catch (e) { console.error('Push notification error:', e); }
+      }
+
       return res.status(201).json(data);
     }
 

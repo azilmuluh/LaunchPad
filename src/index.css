@@ -1,5 +1,37 @@
 @import "tailwindcss";
 
+@font-face {
+  font-family: 'Space Grotesk';
+  src: url('/fonts/space-grotesk-v15-latin-400.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Space Grotesk';
+  src: url('/fonts/space-grotesk-v15-latin-500.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Space Grotesk';
+  src: url('/fonts/space-grotesk-v15-latin-600.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Space Grotesk';
+  src: url('/fonts/space-grotesk-v15-latin-700.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
 /* CSS variables for theme switching */
 :root {
   --bg:      #FFFDF7; /* Off-white for light mode */
@@ -128,3 +160,159 @@ input, select, textarea, button { font-family: inherit; }
   100% { transform: scale(1) rotate(0deg); opacity: 1; }
 }
 .badge-pop { animation: badge-pop 0.5s cubic-bezier(0.34,1.56,0.64,1) forwards; }
+
+/* ─── Mobile Responsiveness ──────────────────────────────────────────────── */
+
+/* Hide scrollbar on blips for cleaner look */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Hide scrollbar but keep functionality */
+.hide-scrollbar::-webkit-scrollbar { display: none; }
+.hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Mobile-first responsive utilities */
+@media (max-width: 768px) {
+  /* Reduce card padding on mobile */
+  .nb-card {
+    padding: 12px;
+    box-shadow: 3px 3px 0px var(--border);
+  }
+  
+  /* Smaller buttons on mobile */
+  .nb-btn {
+    font-size: 13px;
+    padding: 8px 12px;
+    box-shadow: 2px 2px 0px var(--border, #0A0A0A);
+  }
+  
+  .nb-btn:hover {
+    transform: translate(-0.5px, -0.5px);
+    box-shadow: 3px 3px 0px var(--border, #0A0A0A);
+  }
+  
+  .nb-btn:active {
+    transform: translate(1px, 1px);
+    box-shadow: 1px 1px 0px var(--border, #0A0A0A);
+  }
+  
+  /* Adjust input sizing */
+  .nb-input {
+    font-size: 14px;
+    padding: 10px 12px;
+  }
+  
+  /* Better touch targets */
+  button, a, input[type="button"], input[type="submit"] {
+    min-height: 44px;
+  }
+  
+  /* Reduce heading sizes on mobile */
+  h1 { font-size: 24px; }
+  h2 { font-size: 20px; }
+  h3 { font-size: 18px; }
+  
+  /* Stack items vertically on mobile */
+  .mobile-stack {
+    flex-direction: column !important;
+  }
+  
+  /* Reduce spacing on mobile */
+  .mobile-compact {
+    gap: 8px !important;
+  }
+  
+  /* Full width on mobile */
+  .mobile-full {
+    width: 100% !important;
+  }
+}
+
+/* Small mobile devices (iPhone SE, etc.) */
+@media (max-width: 375px) {
+  .nb-card {
+    padding: 10px;
+    border-radius: 10px;
+  }
+  
+  .nb-btn {
+    font-size: 12px;
+    padding: 6px 10px;
+  }
+  
+  .nb-input {
+    font-size: 13px;
+    padding: 8px 10px;
+  }
+  
+  h1 { font-size: 20px; }
+  h2 { font-size: 18px; }
+  h3 { font-size: 16px; }
+}
+
+/* Tablet devices */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .nb-card {
+    padding: 16px;
+  }
+  
+  .nb-btn {
+    font-size: 14px;
+    padding: 10px 16px;
+  }
+}
+
+/* Safe area insets for notched devices (iPhone X and newer) */
+@supports (padding: max(0px)) {
+  body {
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+  
+  /* Adjust bottom spacing for home indicator */
+  .safe-area-bottom {
+    padding-bottom: max(8px, env(safe-area-inset-bottom));
+  }
+  
+  .mobile-safe-bottom {
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+  }
+}
+
+/* Improved touch scrolling on iOS */
+* {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Prevent text size adjustment on orientation change */
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Better tap highlighting */
+* {
+  -webkit-tap-highlight-color: rgba(255, 92, 0, 0.1);
+}
+
+/* Landscape mobile optimizations */
+@media (max-width: 896px) and (orientation: landscape) {
+  .nb-card {
+    padding: 10px;
+  }
+  
+  h1 { font-size: 18px; }
+  h2 { font-size: 16px; }
+  h3 { font-size: 14px; }
+}
+
+/* Print styles */
+@media print {
+  .nb-btn, button, .no-print {
+    display: none !important;
+  }
+  
+  .nb-card {
+    box-shadow: none;
+    border: 1px solid #ccc;
+  }
+}

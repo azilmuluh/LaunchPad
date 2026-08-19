@@ -2,8 +2,6 @@ import jwt from 'jsonwebtoken';
 import OpenAI from 'openai';
 import supabase from './_supabase.js';
 import { sendOneSignalNotification } from './_onesignal.js';
-import { JSDOM } from 'jsdom';
-import { Readability } from '@mozilla/readability';
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
@@ -18,13 +16,7 @@ async function fetchWithTimeout(url, { timeoutMs = 12000, headers = {} } = {}) {
 }
 
 function extractReadableText(html, url) {
-  try {
-    const dom = new JSDOM(html, { url });
-    const reader = new Readability(dom.window.document);
-    const article = reader.parse();
-    if (article?.textContent) return article.textContent;
-  } catch {}
-  // Fallback: strip tags (kept for safety)
+  // Pure JavaScript HTML Text Stripper (fully compatible with serverless & edge environments)
   return html.replace(/<script[\s\S]*?<\/script>/gi, ' ')
     .replace(/<style[\s\S]*?<\/style>/gi, ' ')
     .replace(/<[^>]*>?/gm, ' ')

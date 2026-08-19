@@ -224,10 +224,26 @@ export default async function handler(req, res) {
     if (action === 'login' && req.method === 'POST') {
       const { email, password } = req.body;
       if (!email || !password) return res.status(400).json({ error: 'Missing credentials' });
-      const { data: user, error } = await supabase.from('lp_users').select('*').eq('email', email.toLowerCase().trim()).maybeSingle();
-      if (error || !user) return res.status(401).json({ error: 'Invalid email or password' });
+      
+      const { data: user, error } = await supabase
+        .from('lp_users')
+        .select('*')
+        .eq('email', email.toLowerCase().trim())
+        .maybeSingle();
+
+      if (error) {
+        console.error('[Auth Login] Supabase error:', error);
+        return res.status(500).json({ error: `Database error: ${error.message || 'Failed to query user'}` });
+      }
+
+      if (!user) {
+        return res.status(401).json({ error: 'Invalid email or password' });
+      }
+
       const valid = await bcrypt.compare(password, user.password_hash);
-      if (!valid) return res.status(401).json({ error: 'Invalid email or password' });
+      if (!valid) {
+        return res.status(401).json({ error: 'Invalid email or password' });
+      }
 
       if (!JWT_SECRET) {
         console.error('CRITICAL: JWT_SECRET environment variable is missing.');
@@ -266,9 +282,7 @@ export default async function handler(req, res) {
       if (age !== undefined)             userUpdates.age = parseInt(age) || null;
       if (location !== undefined)        userUpdates.location = location;
       if (interests !== undefined)       userUpdates.interests = JSON.stringify(interests);
-      if (req.body.opportunity_categories !== undefined) {
-        userUpdates.opportunity_categories = JSON.stringify(req.body.opportunity_categories);
-      }
+      // Remove: opportunity_categories is now stored in lp_user_extra.settings
 
       let user;
       if (Object.keys(userUpdates).length > 0) {
@@ -284,7 +298,28 @@ export default async function handler(req, res) {
       if (avatar_url !== undefined)     extraUpdates.avatar_url = avatar_url;
       if (cv_text !== undefined)        extraUpdates.cv_text = cv_text;
       if (req.body.cv_filename !== undefined) extraUpdates.cv_filename = req.body.cv_filename;
-      if (settings !== undefined)       extraUpdates.settings = settings;
+      if (settings !== undefined) {
+        // If opportunity_categories is present in body, update it in settings
+        let newSettings = settings;
+        if (req.body.opportunity_categories !== undefined) {
+          try {
+            const parsed = Array.isArray(req.body.opportunity_categories)
+              ? req.body.opportunity_categories
+              : JSON.parse(req.body.opportunity_categories);
+            newSettings = { ...settings, opportunity_categories: parsed };
+          } catch {
+            newSettings = { ...settings, opportunity_categories: req.body.opportunity_categories };
+          }
+        }
+        extraUpdates.settings = newSettings;
+      } else if (req.body.opportunity_categories !== undefined) {
+        // If settings not present but opportunity_categories is, upsert settings
+        let parsed = req.body.opportunity_categories;
+        if (typeof parsed === 'string') {
+          try { parsed = JSON.parse(parsed); } catch {}
+        }
+        extraUpdates.settings = { opportunity_categories: parsed };
+      }
 
       const { data: existingExtra } = await supabase.from('lp_user_extra').select('id').eq('user_id', decoded.userId).maybeSingle();
       if (existingExtra) {

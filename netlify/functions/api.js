@@ -21,12 +21,15 @@ import leaderboard from '../../api/leaderboard.js';
 import likes from '../../api/likes.js';
 import messages from '../../api/messages.js';
 import notify from '../../api/notify.js';
+import notifications from '../../api/notifications.js';
 import opportunities from '../../api/opportunities.js';
 import posts from '../../api/posts.js';
 import quests from '../../api/quests.js';
 import seedOpps from '../../api/seed-opps.js';
 import socialProof from '../../api/social-proof.js';
 import verifiedOpps from '../../api/verified-opps.js';
+import applications from '../../api/applications.js';
+import opportunityPages from '../../api/opportunity-pages.js';
 
 const app = express();
 app.use(express.json({ limit: '10mb' }));
@@ -63,12 +66,17 @@ router.all('/leaderboard', wrap(leaderboard));
 router.all('/likes', wrap(likes));
 router.all('/messages', wrap(messages));
 router.all('/notify', wrap(notify));
+router.all('/notifications', wrap(notifications));
 router.all('/opportunities', wrap(opportunities));
 router.all('/posts', wrap(posts));
 router.all('/quests', wrap(quests));
 router.all('/seed-opps', wrap(seedOpps));
 router.all('/social-proof', wrap(socialProof));
 router.all('/verified-opps', wrap(verifiedOpps));
+router.all('/applications', wrap(applications));
+router.all('/opportunities/pages/stats', wrap(opportunityPages));
+router.all('/opportunities/page/by-slug', wrap(opportunityPages));
+router.all('/opportunities/:id/page', wrap(opportunityPages));
 
 // Use the router for both /api and /
 app.use('/api', router);

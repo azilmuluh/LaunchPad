@@ -30,8 +30,9 @@ export default function AuthPage({ setUser }: any) {
   return (
     <div className="min-h-screen flex" style={{ background: 'var(--bg)' }}>
       <SEO 
-        title={t('signin')}
-        description={t('signin_desc')}
+        title="Sign In — LaunchPad Community"
+        description="Sign in to LaunchPad Community to access personalized scholarships, internships, and AI application help for African youth."
+        keywords="LaunchPad login, LaunchPad Community sign in, launchpadcm"
         canonical="/login"
       />
       {/* Left panel */}
@@ -49,7 +50,11 @@ export default function AuthPage({ setUser }: any) {
             {t('gateway_to')}<br />
             <span style={{ color: '#FF5C00' }}>{t('opportunities_word')}</span>
           </h1>
-          <p className="font-bold text-sm mb-1" style={{ color: '#A0AEC0' }}>{t('features_data')[0].title}, {t('features_data')[1].title}</p>
+          {Array.isArray(t('features_data')) && t('features_data').length >= 2 && (
+            <p className="font-bold text-sm mb-1" style={{ color: '#A0AEC0' }}>
+              {t('features_data')[0]?.title}, {t('features_data')[1]?.title}
+            </p>
+          )}
           <p className="font-bold text-sm mb-8" style={{ color: '#A0AEC0' }}>{t('built_for')}</p>
           <div className="grid grid-cols-2 gap-3">
             {[
@@ -99,7 +104,7 @@ export default function AuthPage({ setUser }: any) {
                 <label className="block text-xs font-black uppercase tracking-widest mb-1.5" style={{ color: 'var(--muted)' }}>{t('password')}</label>
                 <div className="relative">
                   <input type={showPass ? 'text' : 'password'} value={password} onChange={e => setPass(e.target.value)} required
-                    placeholder="\u2022\u2022\u2022\u2022\u2022\u2022" className="nb-input pr-10" />
+                    placeholder="••••••" className="nb-input pr-10" />
                   <button type="button" onClick={() => setShowP(!showPass)}
                     className="absolute right-3 top-1/2 -translate-y-1/2" style={{ color: '#999' }}>
                     {showPass ? <EyeOff size={15} /> : <Eye size={15} />}

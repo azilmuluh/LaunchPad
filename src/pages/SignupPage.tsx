@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { setSession, apiRequest } from '../lib/auth';
-import { INTERESTS, INTEREST_CATEGORIES, getInterestsByCategory } from '../lib/interests';
+import { INTEREST_CATEGORIES, getInterestsByCategory } from '../lib/interests';
 import { Check, ChevronRight, ChevronLeft, Eye, EyeOff, Upload, FileText, RefreshCw, Building2, User } from 'lucide-react';
 import SEO from '../components/SEO';
 import { useI18n } from '../lib/i18n';
@@ -44,10 +44,6 @@ export default function SignupPage({ setUser }: any) {
 
   const set = (k: string, v: any) => setForm(f => ({ ...f, [k]: v }));
   const isOrg = form.account_type === 'organization';
-
-  // Org accounts skip steps 4 (interests) and 5 (education) and 6 (CV)
-  const totalSteps = isOrg ? 3 : 6;
-  const effectiveStep = isOrg && step > 3 ? 3 : step;
 
   const canNext = () => {
     if (step === 1) return !!form.account_type;
@@ -149,8 +145,9 @@ export default function SignupPage({ setUser }: any) {
   return (
     <div className="min-h-screen flex items-center justify-center p-4" style={{ background: 'var(--bg)' }}>
       <SEO 
-        title="Join LaunchPad Community" 
-        description="Create your free LaunchPad account to discover scholarships, internships, and competitions. Join 1,000+ African youth accelerating their future."
+        title="Join LaunchPad Community — Free Account for African Youth"
+        description="Create your free LaunchPad Community account to discover verified scholarships, internships, and competitions tailored for Cameroon and Africa."
+        keywords="LaunchPad signup, LaunchPad Community register, launchpadcm, scholarships Cameroon"
         canonical="/signup"
       />
       <div className="w-full max-w-lg">
@@ -250,7 +247,7 @@ export default function SignupPage({ setUser }: any) {
                   <label className={LBL} style={{ color: 'var(--muted)' }}>{t('password')} * (min 6)</label>
                   <div className="relative">
                     <input className={INP} type={showPass ? 'text' : 'password'} value={form.password}
-                      onChange={e => set('password', e.target.value)} placeholder="\u2022\u2022\u2022\u2022\u2022\u2022" />
+                      onChange={e => set('password', e.target.value)} placeholder="••••••" />
                     <button type="button" onClick={() => setShowPass(p => !p)}
                       className="absolute right-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--muted)' }}>
                       {showPass ? <EyeOff size={14} /> : <Eye size={14} />}

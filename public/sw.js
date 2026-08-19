@@ -1,4 +1,4 @@
-const CACHE = 'launchpad-v3';
+const CACHE = 'launchpad-v5';
 const STATIC = [
   '/',
   '/manifest.json',
@@ -8,7 +8,8 @@ const STATIC = [
 
 self.addEventListener('install', e => {
   e.waitUntil(
-    caches.open(CACHE).then(c => c.addAll(STATIC)).then(() => self.skipWaiting())
+    caches.open(CACHE).then(c => c.addAll(STATIC))
+    // Do NOT skipWaiting here — user confirms via in-app Update button
   );
 });
 
@@ -26,21 +27,21 @@ self.addEventListener('message', (event) => {
 
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
-  // Network-first for API calls
+
+  // Never intercept /api/ requests
   if (url.pathname.startsWith('/api/')) {
-    e.respondWith(
-      fetch(e.request).catch(() => new Response(JSON.stringify({ error: 'Offline' }), {
-        headers: { 'Content-Type': 'application/json' }
-      }))
-    );
     return;
   }
 
-  // Network-first for navigations/HTML (prevents blank screens after deploy)
+  // Pass through cross-origin requests directly without SW caching/HTML fallback
+  if (url.origin !== self.location.origin) {
+    return;
+  }
+
   if (e.request.mode === 'navigate' || e.request.destination === 'document' || url.pathname === '/') {
     e.respondWith((async () => {
       try {
-        const fresh = await fetch(e.request);
+        const fresh = await fetch(e.request, { cache: 'no-store' });
         if (fresh && fresh.ok) {
           const cache = await caches.open(CACHE);
           cache.put(e.request, fresh.clone());
@@ -54,17 +55,16 @@ self.addEventListener('fetch', e => {
     return;
   }
 
-  // Cache-first (stale-while-revalidate) for static assets
   e.respondWith(
     caches.match(e.request).then(cached => {
-      const fetchPromise = fetch(e.request).then(resp => {
+      if (cached) return cached;
+      return fetch(e.request).then(resp => {
         if (resp.ok && e.request.method === 'GET') {
           const clone = resp.clone();
           caches.open(CACHE).then(c => c.put(e.request, clone));
         }
         return resp;
       });
-      return cached || fetchPromise.catch(() => caches.match('/'));
     })
   );
 });

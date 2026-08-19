@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { apiRequest } from '../lib/auth';
 import {
-  Target, Plus, Trash2, Edit3, Check, ChevronRight,
-  Calendar, Sparkles, TrendingUp, X, Bot, Zap
+  Target, Plus, Trash2, Check, ChevronUp, ChevronDown,
+  Calendar, Sparkles, X, Bot, Zap
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useI18n } from '../lib/i18n';
@@ -18,13 +18,67 @@ const EXAMPLE_GOALS = [
   'Study medicine in Germany',
 ];
 
+function parseTargetDate(raw: string): Date | null {
+  if (!raw?.trim()) return null;
+  const d = new Date(raw);
+  if (!isNaN(d.getTime())) return d;
+  const m = raw.match(/(\w+)\s+(\d{1,2}),?\s*(\d{4})/i);
+  if (m) {
+    const tryD = new Date(`${m[1]} ${m[2]}, ${m[3]}`);
+    if (!isNaN(tryD.getTime())) return tryD;
+  }
+  return null;
+}
+
+function daysUntilTarget(raw: string): number | null {
+  const d = parseTargetDate(raw);
+  if (!d) return null;
+  return Math.ceil((d.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+}
+
+function urgencyStyle(days: number | null) {
+  if (days === null) return { color: '#374151', bg: '#F9FAFB', label: '' };
+  if (days < 0) return { color: '#991B1B', bg: '#FEE2E2', label: 'Overdue' };
+  if (days <= 14) return { color: '#991B1B', bg: '#FEE2E2', label: `${days}d left` };
+  if (days <= 60) return { color: '#92400E', bg: '#FFFBEB', label: `${days}d left` };
+  return { color: '#065F46', bg: '#ECFDF5', label: `${days}d left` };
+}
+
+function ProgressRing({ percent, color, size = 52 }: { percent: number; color: string; size?: number }) {
+  const r = (size - 8) / 2;
+  const c = 2 * Math.PI * r;
+  const offset = c - (Math.min(100, Math.max(0, percent)) / 100) * c;
+  return (
+    <div className="relative flex-shrink-0" style={{ width: size, height: size }}>
+      <svg width={size} height={size} className="-rotate-90">
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#f0ede6" strokeWidth="5" />
+        <circle
+          cx={size / 2} cy={size / 2} r={r} fill="none"
+          stroke={color} strokeWidth="5" strokeLinecap="round"
+          strokeDasharray={c} strokeDashoffset={offset}
+          className="transition-all duration-500"
+        />
+      </svg>
+      <span
+        className="absolute inset-0 flex items-center justify-center font-black"
+        style={{ fontSize: size < 56 ? 10 : 11, color }}
+      >
+        {percent}%
+      </span>
+    </div>
+  );
+}
+
 function GoalCard({ goal, onDelete, onUpdate, onAskAI, t, GOAL_CATS }: any) {
   const [editing,   setEditing]   = useState(false);
   const [progress,  setProgress]  = useState(goal.progress || 0);
   const [newMile,   setNewMile]   = useState('');
   const [milestones, setMilestones] = useState<any[]>(goal.milestones || []);
+  const [justToggled, setJustToggled] = useState<number | null>(null);
 
   const cat = GOAL_CATS.find(c => c.id === goal.category) || GOAL_CATS[6];
+  const daysLeft = goal.target_date ? daysUntilTarget(goal.target_date) : null;
+  const urgency = urgencyStyle(daysLeft);
 
   const toggleMilestone = async (idx: number) => {
     const updated = milestones.map((m: any, i: number) =>
@@ -34,8 +88,20 @@ function GoalCard({ goal, onDelete, onUpdate, onAskAI, t, GOAL_CATS }: any) {
     const done = updated.filter((m: any) => m.done).length;
     const prog = updated.length ? Math.round((done / updated.length) * 100) : 0;
     setProgress(prog);
+    setJustToggled(idx);
+    setTimeout(() => setJustToggled(null), 400);
     await apiRequest('/api/goals', { method: 'PUT', body: JSON.stringify({ id: goal.id, milestones: updated, progress: prog }) });
     onUpdate({ ...goal, milestones: updated, progress: prog });
+  };
+
+  const moveMilestone = async (idx: number, dir: -1 | 1) => {
+    const next = idx + dir;
+    if (next < 0 || next >= milestones.length) return;
+    const updated = [...milestones];
+    [updated[idx], updated[next]] = [updated[next], updated[idx]];
+    setMilestones(updated);
+    await apiRequest('/api/goals', { method: 'PUT', body: JSON.stringify({ id: goal.id, milestones: updated }) });
+    onUpdate({ ...goal, milestones: updated });
   };
 
   const addMilestone = async () => {
@@ -60,7 +126,7 @@ function GoalCard({ goal, onDelete, onUpdate, onAskAI, t, GOAL_CATS }: any) {
         {/* Header */}
         <div className="flex items-start justify-between gap-2 mb-3">
           <div className="flex items-start gap-2 flex-1">
-            <span className="text-2xl flex-shrink-0">{cat.emoji}</span>
+            <ProgressRing percent={progress} color={cat.color} />
             <div className="flex-1">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="nb-badge" style={{ color: cat.color, borderColor: cat.color, background: cat.bg }}>{cat.label}</span>
@@ -71,9 +137,17 @@ function GoalCard({ goal, onDelete, onUpdate, onAskAI, t, GOAL_CATS }: any) {
               <h3 className="font-black text-base mt-1 leading-snug">{goal.title}</h3>
               {goal.description && <p className="text-xs font-medium mt-0.5" style={{ color: 'var(--muted)' }}>{goal.description}</p>}
               {goal.target_date && (
-                <p className="text-xs font-bold mt-1 flex items-center gap-1" style={{ color: '#FF5C00' }}>
-                  <Calendar size={10} /> {t('target_label')}: {goal.target_date}
-                </p>
+                <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                  <p className="text-xs font-bold flex items-center gap-1" style={{ color: '#FF5C00' }}>
+                    <Calendar size={10} /> {t('target_label')}: {goal.target_date}
+                  </p>
+                  {urgency.label && (
+                    <span className="nb-badge text-[9px] py-0.5 px-1.5"
+                      style={{ color: urgency.color, borderColor: urgency.color, background: urgency.bg }}>
+                      {urgency.label}
+                    </span>
+                  )}
+                </div>
               )}
             </div>
           </div>
@@ -105,17 +179,33 @@ function GoalCard({ goal, onDelete, onUpdate, onAskAI, t, GOAL_CATS }: any) {
         {milestones.length > 0 && (
           <div className="mb-3 space-y-1.5">
             {milestones.map((m: any, i: number) => (
-              <button key={i} onClick={() => toggleMilestone(i)}
-                className="w-full flex items-center gap-2 text-left px-2 py-1.5 rounded-lg transition-all"
-                style={{ background: m.done ? '#E8FFF0' : '#FAFAF7', border: `1.5px solid ${m.done ? '#00C853' : '#e0ddd6'}` }}>
-                <div className="w-4 h-4 rounded flex items-center justify-center flex-shrink-0"
-                  style={{ background: m.done ? '#00C853' : '#fff', border: '1.5px solid #0A0A0A' }}>
-                  {m.done && <Check size={10} className="text-white" />}
+              <div key={i} className="flex items-center gap-1">
+                <button onClick={() => toggleMilestone(i)}
+                  className={`flex-1 flex items-center gap-2 text-left px-2 py-1.5 rounded-lg transition-all ${
+                    justToggled === i ? 'scale-[1.02]' : ''
+                  }`}
+                  style={{ background: m.done ? '#E8FFF0' : '#FAFAF7', border: `1.5px solid ${m.done ? '#00C853' : '#e0ddd6'}` }}>
+                  <div className={`w-4 h-4 rounded flex items-center justify-center flex-shrink-0 transition-transform ${
+                    justToggled === i ? 'scale-125' : ''
+                  }`}
+                    style={{ background: m.done ? '#00C853' : '#fff', border: '1.5px solid #0A0A0A' }}>
+                    {m.done && <Check size={10} className="text-white" />}
+                  </div>
+                  <span className="text-xs font-bold" style={{ color: m.done ? '#065F46' : '#0A0A0A', textDecoration: m.done ? 'line-through' : 'none' }}>
+                    {m.text}
+                  </span>
+                </button>
+                <div className="flex flex-col gap-0.5 flex-shrink-0">
+                  <button type="button" onClick={() => moveMilestone(i, -1)} disabled={i === 0}
+                    className="nb-btn nb-btn-ghost p-0.5 disabled:opacity-30">
+                    <ChevronUp size={12} />
+                  </button>
+                  <button type="button" onClick={() => moveMilestone(i, 1)} disabled={i === milestones.length - 1}
+                    className="nb-btn nb-btn-ghost p-0.5 disabled:opacity-30">
+                    <ChevronDown size={12} />
+                  </button>
                 </div>
-                <span className="text-xs font-bold" style={{ color: m.done ? '#065F46' : '#0A0A0A', textDecoration: m.done ? 'line-through' : 'none' }}>
-                  {m.text}
-                </span>
-              </button>
+              </div>
             ))}
           </div>
         )}
@@ -278,6 +368,13 @@ export default function GoalsPage({ user }: any) {
   const active    = goals.filter(g => g.status !== 'completed');
   const completed = goals.filter(g => g.status === 'completed');
   const displayed = tab === 'active' ? active : completed;
+  const completionRate = goals.length
+    ? Math.round((completed.length / goals.length) * 100)
+    : 0;
+  const avgProgress = active.length
+    ? Math.round(active.reduce((s, g) => s + (g.progress || 0), 0) / active.length)
+    : 0;
+  const onTrackStreak = active.filter(g => (g.progress || 0) > 0).length;
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6">
@@ -289,6 +386,19 @@ export default function GoalsPage({ user }: any) {
             <p className="font-bold text-sm mt-0.5" style={{ color: '#FFD600' }}>
               {t('active_goals_count', { n: active.length })} · {t('completed_goals_count', { n: completed.length })}
             </p>
+            {goals.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-3">
+                <span className="text-[10px] font-black uppercase px-2 py-1 rounded-lg border-2 border-[#FFD600] text-[#FFD600]">
+                  {completionRate}% complete
+                </span>
+                <span className="text-[10px] font-black uppercase px-2 py-1 rounded-lg border-2 border-white/30 text-white/90">
+                  {avgProgress}% avg progress
+                </span>
+                <span className="text-[10px] font-black uppercase px-2 py-1 rounded-lg border-2 border-[#FF5C00] text-[#FF5C00] bg-white/10">
+                  {onTrackStreak} on track
+                </span>
+              </div>
+            )}
           </div>
           <button onClick={() => setShowNew(true)}
             className="nb-btn nb-btn-orange px-4 py-2.5 text-sm flex items-center gap-2">

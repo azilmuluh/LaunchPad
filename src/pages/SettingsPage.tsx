@@ -6,6 +6,38 @@ import { applyTheme, initTheme, type Theme } from '../lib/theme';
 import { useI18n } from '../lib/i18n';
 export { initTheme };
 
+function Section({ icon, title, children }: any) {
+  return (
+    <div className="nb-card p-5 mb-4">
+      <h3 className="font-black text-base mb-3 flex items-center gap-2">{icon} {title}</h3>
+      {children}
+    </div>
+  );
+}
+
+function Toggle({ label, desc, settingKey, active, onToggle }: {
+  label: string;
+  desc: string;
+  settingKey: string;
+  active: boolean;
+  onToggle: (key: string, val: boolean) => void;
+}) {
+  return (
+    <div className="flex items-center justify-between py-3" style={{ borderBottom: '1.5px solid #f0ede6' }}>
+      <div>
+        <p className="font-bold text-sm">{label}</p>
+        <p className="text-xs font-bold" style={{ color: '#999' }}>{desc}</p>
+      </div>
+      <button onClick={() => onToggle(settingKey, !active)}
+        className="w-12 h-6 rounded-full transition-all flex-shrink-0 relative"
+        style={{ background: active ? '#FF5C00' : '#e0ddd6', border: '2px solid #0A0A0A' }}>
+        <div className="w-4 h-4 rounded-full absolute top-0.5 transition-all"
+          style={{ background: 'var(--surface)', border: '1.5px solid #0A0A0A', left: active ? '26px' : '2px' }} />
+      </button>
+    </div>
+  );
+}
+
 export default function SettingsPage({ user, setUser }: any) {
   const { t } = useI18n();
   const navigate = useNavigate();
@@ -38,28 +70,6 @@ export default function SettingsPage({ user, setUser }: any) {
   // Apply theme on mount
   useEffect(() => { applyTheme(theme); }, []);
 
-  const Toggle = ({ label, desc, settingKey }: { label: string; desc: string; settingKey: string }) => (
-    <div className="flex items-center justify-between py-3" style={{ borderBottom: '1.5px solid #f0ede6' }}>
-      <div>
-        <p className="font-bold text-sm">{label}</p>
-        <p className="text-xs font-bold" style={{ color: '#999' }}>{desc}</p>
-      </div>
-      <button onClick={() => saveSetting(settingKey, !settings[settingKey])}
-        className="w-12 h-6 rounded-full transition-all flex-shrink-0 relative"
-        style={{ background: settings[settingKey] ? '#FF5C00' : '#e0ddd6', border: '2px solid #0A0A0A' }}>
-        <div className="w-4 h-4 rounded-full absolute top-0.5 transition-all"
-          style={{ background: 'var(--surface)', border: '1.5px solid #0A0A0A', left: settings[settingKey] ? '26px' : '2px' }} />
-      </button>
-    </div>
-  );
-
-  const Section = ({ icon, title, children }: any) => (
-    <div className="nb-card p-5 mb-4">
-      <h3 className="font-black text-base mb-3 flex items-center gap-2">{icon} {title}</h3>
-      {children}
-    </div>
-  );
-
   return (
     <div className="max-w-xl mx-auto px-4 py-6">
       <div className="flex items-center justify-between mb-6">
@@ -90,30 +100,30 @@ export default function SettingsPage({ user, setUser }: any) {
             ))}
           </div>
         </div>
-        <Toggle label={t('compact_cards')} desc={t('compact_cards_desc')} settingKey="compact_cards" />
-        <Toggle label={t('show_xp_anim')} desc={t('show_xp_anim_desc')} settingKey="show_xp_anim" />
+        <Toggle label={t('compact_cards')} desc={t('compact_cards_desc')} settingKey="compact_cards" active={!!settings.compact_cards} onToggle={saveSetting} />
+        <Toggle label={t('show_xp_anim')} desc={t('show_xp_anim_desc')} settingKey="show_xp_anim" active={!!settings.show_xp_anim} onToggle={saveSetting} />
       </Section>
 
       <Section icon={<Bell size={16} style={{ color: '#FF5C00' }} />} title={t('notifications')}>
-        <Toggle label={t('opp_alerts')} desc={t('opp_alerts_desc')} settingKey="notify_opportunities" />
-        <Toggle label={t('comm_updates')} desc={t('comm_updates_desc')} settingKey="notify_community" />
-        <Toggle label={t('weekly_digest')} desc={t('weekly_digest_desc')} settingKey="notify_digest" />
-        <Toggle label={t('badge_emails')} desc={t('badge_emails_desc')} settingKey="notify_badges" />
+        <Toggle label={t('opp_alerts')} desc={t('opp_alerts_desc')} settingKey="notify_opportunities" active={!!settings.notify_opportunities} onToggle={saveSetting} />
+        <Toggle label={t('comm_updates')} desc={t('comm_updates_desc')} settingKey="notify_community" active={!!settings.notify_community} onToggle={saveSetting} />
+        <Toggle label={t('weekly_digest')} desc={t('weekly_digest_desc')} settingKey="notify_digest" active={!!settings.notify_digest} onToggle={saveSetting} />
+        <Toggle label={t('badge_emails')} desc={t('badge_emails_desc')} settingKey="notify_badges" active={!!settings.notify_badges} onToggle={saveSetting} />
         <div className="mt-2" />
-        <Toggle label="Quest updates" desc="Get notified when you complete quests." settingKey="notify_quests" />
-        <Toggle label="AI roadmaps" desc="Get notified when LaunchPad AI creates a roadmap/goal for you." settingKey="notify_ai" />
-        <Toggle label="Streak reminders" desc="Get a reminder when your streak is at risk." settingKey="notify_streak" />
+        <Toggle label="Quest updates" desc="Get notified when you complete quests." settingKey="notify_quests" active={!!settings.notify_quests} onToggle={saveSetting} />
+        <Toggle label="AI roadmaps" desc="Get notified when LaunchPad AI creates a roadmap/goal for you." settingKey="notify_ai" active={!!settings.notify_ai} onToggle={saveSetting} />
+        <Toggle label="Streak reminders" desc="Get a reminder when your streak is at risk." settingKey="notify_streak" active={!!settings.notify_streak} onToggle={saveSetting} />
       </Section>
 
       <Section icon={<Globe size={16} style={{ color: 'var(--surface)' }} />} title={t('discovery')}>
-        <Toggle label={t('include_remote')} desc={t('include_remote_desc')} settingKey="include_remote" />
-        <Toggle label={t('cameroon_focused')} desc={t('cameroon_only_desc')} settingKey="cameroon_only" />
-        <Toggle label={t('personalized_feed')} desc={t('personalized_feed_desc')} settingKey="personalized_feed" />
+        <Toggle label={t('include_remote')} desc={t('include_remote_desc')} settingKey="include_remote" active={!!settings.include_remote} onToggle={saveSetting} />
+        <Toggle label={t('cameroon_focused')} desc={t('cameroon_only_desc')} settingKey="cameroon_only" active={!!settings.cameroon_only} onToggle={saveSetting} />
+        <Toggle label={t('personalized_feed')} desc={t('personalized_feed_desc')} settingKey="personalized_feed" active={!!settings.personalized_feed} onToggle={saveSetting} />
       </Section>
 
       <Section icon={<Shield size={16} style={{ color: '#00C853' }} />} title={t('privacy')}>
-        <Toggle label={t('show_leaderboard')} desc={t('show_leaderboard_desc')} settingKey="show_leaderboard" />
-        <Toggle label={t('share_activity')} desc={t('share_activity_desc')} settingKey="share_activity" />
+        <Toggle label={t('show_leaderboard')} desc={t('show_leaderboard_desc')} settingKey="show_leaderboard" active={!!settings.show_leaderboard} onToggle={saveSetting} />
+        <Toggle label={t('share_activity')} desc={t('share_activity_desc')} settingKey="share_activity" active={!!settings.share_activity} onToggle={saveSetting} />
       </Section>
 
       <div className="nb-card p-5">

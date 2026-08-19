@@ -3,7 +3,7 @@ import { apiRequest } from '../lib/auth';
 import {
   Heart, MessageCircle, Share2, Sparkles,
   ArrowUpRight, Bookmark, Loader2, X, Send,
-  Video, RefreshCw
+  Video, RefreshCw, Trash2
 } from 'lucide-react';
 import RoadmapModal from '../components/RoadmapModal';
 import CreateBlipModal from '../components/CreateBlipModal';

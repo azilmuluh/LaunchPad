@@ -14,12 +14,18 @@ export default async function handler(req, res) {
 
     if (req.method === 'GET') {
       if (action === 'get_counts') {
-        const { data, error } = await supabase
-          .from('lp_opportunity_stats')
-          .select('*')
-          .in('item_id', item_id.split(','));
-        if (error) throw error;
-        return res.status(200).json(data || []);
+        try {
+          if (!item_id) return res.status(200).json([]);
+          const { data, error } = await supabase
+            .from('lp_opportunity_stats')
+            .select('*')
+            .in('item_id', item_id.split(','));
+          if (error) throw error;
+          return res.status(200).json(data || []);
+        } catch (dbErr) {
+          console.warn('[Social Proof] Query stats failed, using empty fallback:', dbErr.message);
+          return res.status(200).json([]);
+        }
       }
     }
 
@@ -33,21 +39,25 @@ export default async function handler(req, res) {
         const { item_id } = req.body;
         if (!item_id) return res.status(400).json({ error: 'item_id required' });
 
-        // Upsert stats
-        const { data: existing } = await supabase.from('lp_opportunity_stats').select('*').eq('item_id', item_id).maybeSingle();
-        if (existing) {
-          await supabase.from('lp_opportunity_stats').update({ 
-            apply_count: (existing.apply_count || 0) + 1,
-            last_applied_at: new Date().toISOString()
-          }).eq('item_id', item_id);
-        } else {
-          await supabase.from('lp_opportunity_stats').insert({ 
-            item_id, apply_count: 1, last_applied_at: new Date().toISOString()
-          });
-        }
+        try {
+          // Upsert stats
+          const { data: existing } = await supabase.from('lp_opportunity_stats').select('*').eq('item_id', item_id).maybeSingle();
+          if (existing) {
+            await supabase.from('lp_opportunity_stats').update({ 
+              apply_count: (existing.apply_count || 0) + 1,
+              last_applied_at: new Date().toISOString()
+            }).eq('item_id', item_id);
+          } else {
+            await supabase.from('lp_opportunity_stats').insert({ 
+              item_id, apply_count: 1, last_applied_at: new Date().toISOString()
+            });
+          }
 
-        // Optional: track who applied
-        await supabase.from('lp_applications').insert({ user_id: userId, item_id });
+          // Optional: track who applied
+          await supabase.from('lp_applications').insert({ user_id: userId, item_id });
+        } catch (dbErr) {
+          console.warn('[Social Proof] Tracking click failed:', dbErr.message);
+        }
 
         return res.status(200).json({ ok: true });
       }

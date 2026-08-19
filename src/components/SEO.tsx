@@ -19,10 +19,10 @@ export default function SEO({
   ogImage = 'https://launchpadcm.netlify.app/LaunchPad.svg',
   noindex = false
 }: SEOProps) {
-  const siteName = 'LaunchPad';
-  const fullTitle = title ? `${title} | ${siteName}` : `${siteName} 🚀 | Scholarships, Internships & Jobs for African Youth`;
+  const siteName = 'LaunchPad Community';
+  const fullTitle = title || `${siteName} | Scholarships, Internships & Jobs for African Youth`;
   const defaultDesc = 'LaunchPad connects African youth to scholarships, internships, competitions, and jobs. Built for Cameroonian students by LaunchPad Community.';
-  const defaultKeywords = 'scholarships, internships, competitions, jobs, african youth, cameroon, career opportunities, launchpad, launchpadcm, launchpadcm.netlify.app, LaunchPad, LaunchPad Community, guide for african youth, guide for cameroonian youth, how to get scholarships in cameroon, guide for african youth, guide for cameroonian youth, IYMC, ICSC, Launchpad, launchpad, opportunity, technology, health, opportunitites in Africa, Cameroon Opportunities, discovery platform, opportunity discovery platform, the platform for oppoertunites';
+  const defaultKeywords = 'scholarships, internships, competitions, jobs, african youth, cameroon, career opportunities, launchpad, launchpadcm, launchpadcm.netlify.app, LaunchPad, LaunchPad Community, guide for african youth, guide for cameroonian youth, how to get scholarships in cameroon, IYMC, ICSC, Launchpad, opportunity, technology, health, opportunities in Africa, Cameroon Opportunities, discovery platform, opportunity discovery platform, DAAD scholarship Cameroon, fully funded scholarships for Cameroonians, Mastercard Foundation scholarship 2026, Tony Elumelu Fellowship Cameroon, scholarships for Cameroonian students 2026, internships for African youth, Chevening scholarship Africa, Commonwealth scholarship Cameroon, Fulbright scholarship Cameroon 2026, Rhodes scholarship West Africa, Google career certificate scholarship Africa, Erasmus Mundus scholarship Africa, study abroad scholarships Cameroon, youth opportunities Cameroon 2026, African youth fellowship programs, leadership programs for Cameroonian youth, free opportunities for young Africans, scholarships open to Cameroon 2026';
   const url = 'https://launchpadcm.netlify.app';
 
   return (
@@ -31,8 +31,12 @@ export default function SEO({
       <title>{fullTitle}</title>
       <meta name="description" content={description || defaultDesc} />
       <meta name="keywords" content={keywords || defaultKeywords} />
-      {noindex && <meta name="robots" content="noindex, nofollow" />}
-      {canonical && <link rel="canonical" href={`${url}${canonical}`} />}
+      {noindex ? (
+        <meta name="robots" content="noindex, nofollow" />
+      ) : (
+        <meta name="robots" content="index, follow" />
+      )}
+      {canonical && !noindex && <link rel="canonical" href={`${url}${canonical}`} />}
 
       {/* Open Graph / Facebook */}
       <meta property="og:type" content={ogType} />

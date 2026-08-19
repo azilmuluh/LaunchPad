@@ -21,15 +21,16 @@ export default async function handler(req, res) {
 
     console.log(`[Engage] Action: ${action}, Item: ${item_id}, Type: ${item_type}, Method: ${req.method}`);
 
-    if (!item_id || !item_type) {
-       // Allow action='comment' without item_id if it's a GET for all comments? No, usually scoped.
-    }
-
     // 1. HANDLE LIKES (UPVOTES)
     if (action === 'like') {
       if (req.method === 'POST') {
+        // Validate required fields
+        if (!item_id || !item_type) {
+          return res.status(400).json({ error: 'Missing required fields: item_id, item_type' });
+        }
+
         // Toggle like
-        const { data: existing } = await supabase
+        const { data: existing, error: fetchError } = await supabase
           .from('lp_engagement_likes')
           .select('id')
           .eq('user_id', userId)
@@ -37,37 +38,74 @@ export default async function handler(req, res) {
           .eq('item_type', item_type)
           .maybeSingle();
 
+        if (fetchError) {
+          console.error('[Engage] Like fetch error:', fetchError);
+          return res.status(500).json({ error: 'Failed to check like status' });
+        }
+
         const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(item_id);
 
         if (existing) {
-          await supabase.from('lp_engagement_likes').delete().eq('id', existing.id);
+          const { error: deleteError } = await supabase.from('lp_engagement_likes').delete().eq('id', existing.id);
+          if (deleteError) {
+            console.error('[Engage] Like delete error:', deleteError);
+            return res.status(500).json({ error: 'Failed to remove like' });
+          }
+          
           if (item_type === 'blip' && isUUID) {
-            await supabase.rpc('decrement_blip_likes', { blip_id: item_id });
+            try {
+              await supabase.rpc('decrement_blip_likes', { blip_id: item_id });
+            } catch (e) {
+              console.error('[Engage] Failed to decrement blip likes:', e);
+            }
           }
           return res.status(200).json({ liked: false });
         } else {
-          await supabase.from('lp_engagement_likes').insert({ user_id: userId, item_id, item_type });
+          const { error: insertError } = await supabase.from('lp_engagement_likes').insert({ user_id: userId, item_id, item_type });
+          if (insertError) {
+            console.error('[Engage] Like insert error:', insertError);
+            return res.status(500).json({ error: 'Failed to add like' });
+          }
+          
           if (item_type === 'blip' && isUUID) {
-            await supabase.rpc('increment_blip_likes', { blip_id: item_id });
+            try {
+              await supabase.rpc('increment_blip_likes', { blip_id: item_id });
+            } catch (e) {
+              console.error('[Engage] Failed to increment blip likes:', e);
+            }
           }
           return res.status(200).json({ liked: true });
         }
       }
       
       if (req.method === 'GET') {
-        const { count } = await supabase
+        if (!item_id || !item_type) {
+          return res.status(400).json({ error: 'Missing required fields: item_id, item_type' });
+        }
+
+        const { count, error: countError } = await supabase
           .from('lp_engagement_likes')
           .select('id', { count: 'exact', head: true })
           .eq('item_id', item_id)
           .eq('item_type', item_type);
+
+        if (countError) {
+          console.error('[Engage] Like count error:', countError);
+          return res.status(500).json({ error: 'Failed to fetch like count' });
+        }
           
-        const { data: userLiked } = await supabase
+        const { data: userLiked, error: userLikeError } = await supabase
           .from('lp_engagement_likes')
           .select('id')
           .eq('user_id', userId)
           .eq('item_id', item_id)
           .eq('item_type', item_type)
           .maybeSingle();
+
+        if (userLikeError) {
+          console.error('[Engage] User like check error:', userLikeError);
+          return res.status(500).json({ error: 'Failed to check user like' });
+        }
 
         return res.status(200).json({ count: count || 0, liked: !!userLiked });
       }
@@ -76,10 +114,20 @@ export default async function handler(req, res) {
     // 2. HANDLE COMMENTS
     if (action === 'comment') {
       if (req.method === 'POST') {
-        const { data: user } = await supabase.from('lp_users').select('full_name').eq('id', userId).single();
+        // Validate required fields
+        if (!item_id || !item_type || !content) {
+          return res.status(400).json({ error: 'Missing required fields: item_id, item_type, content' });
+        }
+
+        const { data: user, error: userError } = await supabase.from('lp_users').select('full_name').eq('id', userId).single();
+        if (userError) {
+          console.error('[Engage] User fetch error:', userError);
+          return res.status(500).json({ error: 'Failed to fetch user info' });
+        }
+
         const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(item_id);
 
-        const { data: comment, error } = await supabase
+        const { data: comment, error: commentError } = await supabase
           .from('lp_engagement_comments')
           .insert({
             user_id: userId,
@@ -92,41 +140,66 @@ export default async function handler(req, res) {
           .select()
           .single();
 
-        if (error) throw error;
+        if (commentError) {
+          console.error('[Engage] Comment insert error:', commentError);
+          return res.status(500).json({ error: 'Failed to create comment' });
+        }
 
+        // Increment blip comment count if applicable
         if (item_type === 'blip' && isUUID) {
-          await supabase.rpc('increment_blip_comments', { blip_id: item_id });
+          try {
+            await supabase.rpc('increment_blip_comments', { blip_id: item_id });
+          } catch (e) {
+            console.error('[Engage] Failed to increment blip comments:', e);
+            // Non-critical, continue
+          }
         }
 
-        // Update user streak stats & XP
-        const { data: st } = await supabase.from('lp_streaks').select('*').eq('user_id', userId).maybeSingle();
-        const XP_COMMENT = 10;
-        if (st) {
-          const newXP = (st.total_xp || 0) + XP_COMMENT;
-          await supabase.from('lp_streaks').update({
-            total_xp: newXP,
-            level: Math.floor(newXP / 500) + 1,
-            comments_made: (st.comments_made || 0) + 1,
-            last_seen: new Date().toISOString()
-          }).eq('user_id', userId);
-        } else {
-          await supabase.from('lp_streaks').insert({
-            user_id: userId,
-            total_xp: XP_COMMENT,
-            level: 1,
-            comments_made: 1,
-            last_seen: new Date().toISOString()
-          });
-        }
+        // Update user streak stats & XP (wrap in try-catch to ensure comment was created)
+        try {
+          const { data: st, error: streakError } = await supabase.from('lp_streaks').select('*').eq('user_id', userId).maybeSingle();
+          if (streakError) throw streakError;
 
-        // Log XP action
-        await supabase.from('lp_xp_log').insert({ user_id: userId, action: 'comment', xp: XP_COMMENT });
+          const XP_COMMENT = 10;
+          if (st) {
+            const newXP = (st.total_xp || 0) + XP_COMMENT;
+            const { error: updateError } = await supabase.from('lp_streaks').update({
+              total_xp: newXP,
+              level: Math.floor(newXP / 500) + 1,
+              comments_made: (st.comments_made || 0) + 1,
+              last_seen: new Date().toISOString()
+            }).eq('user_id', userId);
+            if (updateError) throw updateError;
+          } else {
+            const { error: insertError } = await supabase.from('lp_streaks').insert({
+              user_id: userId,
+              total_xp: XP_COMMENT,
+              level: 1,
+              comments_made: 1,
+              last_seen: new Date().toISOString()
+            });
+            if (insertError) throw insertError;
+          }
+
+          // Log XP action
+          const { error: logError } = await supabase.from('lp_xp_log').insert({ user_id: userId, action: 'comment', xp: XP_COMMENT });
+          if (logError) {
+            console.error('[Engage] XP log error:', logError);
+            // Non-critical
+          }
+        } catch (xpError) {
+          console.error('[Engage] XP update failed:', xpError);
+          // XP update failed, but comment was created - return the comment anyway
+        }
 
         return res.status(200).json(comment);
       }
 
       if (req.method === 'GET') {
-        const { item_id, item_type } = req.query;
+        if (!item_id || !item_type) {
+          return res.status(400).json({ error: 'Missing required fields: item_id, item_type' });
+        }
+
         const { data: comments, error } = await supabase
           .from('lp_engagement_comments')
           .select('*')
@@ -134,8 +207,11 @@ export default async function handler(req, res) {
           .eq('item_type', item_type)
           .order('created_at', { ascending: true });
 
-        if (error) throw error;
-        return res.status(200).json(comments);
+        if (error) {
+          console.error('[Engage] Comment fetch error:', error);
+          return res.status(500).json({ error: 'Failed to fetch comments' });
+        }
+        return res.status(200).json(comments || []);
       }
     }
 

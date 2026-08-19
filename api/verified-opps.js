@@ -31,19 +31,90 @@ function isValidDeadline(str) {
   return d.getTime() > new Date('2024-01-01').getTime();
 }
 
+// Banish ambiguous/generalized posts with strict regex and heuristic checks
+function isAmbiguousOrGeneralized(title, description) {
+  const text = (title + ' ' + description).toLowerCase();
+  
+  // Regex patterns for generic plural terms and list indicators
+  const genericPatterns = [
+    /\b(scholarships?|internships?|jobs?|opportunities|competitions?|events?|grants?)\s+for\s+(young|african|cameroonian|youth|students?)\b/i,
+    /\blist\s+of\s+(scholarships?|internships?|jobs?|opportunities|competitions?|events?)\b/i,
+    /\b(top|best|\d+)\s+(scholarships?|internships?|jobs?|opportunities)\b/i,
+    /\b(available|open|upcoming)\s+(scholarships?|internships?|jobs?|opportunities)\b/i,
+    /\b(scholarships?|internships?|jobs?)\s+(available|open|you can apply)\b/i,
+    /\bmultiple\s+(scholarships?|internships?|opportunities)\b/i,
+    /\bvarious\s+(scholarships?|internships?|opportunities)\b/i,
+    /\bseveral\s+(scholarships?|internships?|opportunities)\b/i,
+    /\bmany\s+(scholarships?|internships?|opportunities)\b/i,
+    /\b(collection|compilation|database)\s+of\b/i,
+  ];
+  
+  // Check if title/description matches any generic pattern
+  return genericPatterns.some(pattern => pattern.test(text));
+}
+
+// Enforce single-entity mapping validation
+function validateSingleEntity(title, description, link, eligibility) {
+  // Link is strictly required for all new posts
+  if (!link || link.trim().length === 0) {
+    return { valid: false, reason: 'Application link is required for all opportunities.' };
+  }
+  
+  // Eligibility must be explicitly provided
+  if (!eligibility || eligibility.trim().length < 10) {
+    return { valid: false, reason: 'Explicit eligibility requirements are required (minimum 10 characters).' };
+  }
+  
+  // Check for list indicators in the link itself
+  const linkText = link.toLowerCase();
+  if (linkText.includes('/list') || linkText.includes('/lists') || linkText.includes('/collection')) {
+    return { valid: false, reason: 'Link appears to point to a list or collection, not a direct application page.' };
+  }
+  
+  return { valid: true };
+}
+
 async function verifyWithAI(title, description, link) {
   if (!NVIDIA_KEY) {
     // No AI key — do basic heuristic check
     const text = (title + ' ' + description).toLowerCase();
     const spamWords = ['free money', 'click here', 'make money fast', 'guaranteed', 'lottery', 'winner'];
     const isSpam = spamWords.some(w => text.includes(w));
-    return { verified: !isSpam, confidence: isSpam ? 10 : 75, reason: isSpam ? 'Spam indicators detected' : 'Basic validation passed' };
+    
+    // Check for list/aggregation indicators
+    const isListOrAggregation = text.includes('list of') || text.includes('multiple') || 
+                                text.includes('several') || text.includes('various') ||
+                                text.includes('top 10') || text.includes('best scholarships');
+    
+    return { 
+      verified: !isSpam && !isListOrAggregation, 
+      confidence: (isSpam || isListOrAggregation) ? 10 : 75, 
+      reason: isSpam ? 'Spam indicators detected' : isListOrAggregation ? 'Lists and aggregations not allowed' : 'Basic validation passed' 
+    };
   }
   try {
     const client = new OpenAI({ apiKey: NVIDIA_KEY, baseURL: 'https://integrate.api.nvidia.com/v1' });
     const completion = await client.chat.completions.create({
       model: 'meta/llama-3.1-8b-instruct',
-      messages: [{ role: 'user', content: `You are a content moderator for an African youth opportunities platform. Is this a legitimate scholarship, internship, competition, event, or job opportunity? Title: "${title}". Description: "${description?.slice(0, 300)}". Link: "${link || 'none'}". Reply ONLY with valid JSON: {"legitimate": true/false, "confidence": 0-100, "reason": "one sentence"}` }],
+      messages: [{ role: 'user', content: `You are a content moderator for an African youth opportunities platform. 
+
+CRITICAL: Reject if this is:
+- A LIST of multiple opportunities (e.g., "Top 10 scholarships", "List of internships")
+- An AGGREGATION or collection
+- A NON-SPECIFIC post (e.g., "Scholarships for Cameroonians" without naming ONE specific program)
+- Generic plural terms without a specific program name
+
+ACCEPT only if this is:
+- ONE specific, named scholarship/internship/job/competition/event
+- Has a direct application link
+- Contains explicit eligibility requirements
+
+Analyze this submission:
+Title: "${title}"
+Description: "${description?.slice(0, 300)}"
+Link: "${link || 'none'}"
+
+Reply ONLY with valid JSON: {"legitimate": true/false, "confidence": 0-100, "reason": "one sentence"}` }],
       temperature: 0.1,
       max_tokens: 120,
     });
@@ -115,6 +186,19 @@ export default async function handler(req, res) {
       if (title.trim().length < 10) return res.status(400).json({ error: 'Title must be at least 10 characters.' });
       if (description.trim().length < 30) return res.status(400).json({ error: 'Description must be at least 30 characters.' });
 
+      // Check for ambiguous/generalized posts
+      if (isAmbiguousOrGeneralized(title, description)) {
+        return res.status(400).json({ 
+          error: 'Generic or list-based posts are not allowed. Please submit ONE specific opportunity with a clear program name.' 
+        });
+      }
+
+      // Enforce single-entity mapping
+      const entityValidation = validateSingleEntity(title, description, link, eligibility);
+      if (!entityValidation.valid) {
+        return res.status(400).json({ error: entityValidation.reason });
+      }
+
       // URL validation
       if (link && !isValidUrl(link)) {
         return res.status(400).json({ error: 'Application link must be a valid URL (https://...).' });
@@ -131,6 +215,14 @@ export default async function handler(req, res) {
 
       // AI verification
       const verification = await verifyWithAI(title, description, link);
+      
+      // Reject if AI flags it
+      if (!verification.verified) {
+        return res.status(400).json({ 
+          error: `Post rejected: ${verification.reason}`,
+          verification 
+        });
+      }
 
       const { data: opp, error: insertErr } = await supabase.from('lp_verified_opps').insert({
         user_id:     userId,

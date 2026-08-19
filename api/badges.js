@@ -142,6 +142,16 @@ export async function checkAndAwardBadges(userId, userEmail, userName) {
       await supabase.from('lp_streaks').update({ total_xp: newXp, level: Math.floor(newXp / 500) + 1 }).eq('user_id', userId);
       newBadges.push({ ...def, key });
       earned.add(key);
+
+      // Create notification
+      await supabase.from('lp_notifications').insert({
+        user_id: userId,
+        type: 'badge_unlock',
+        title: 'New Badge Unlocked!',
+        content: `You earned the ${def.label} badge! (+${def.xp} XP)`,
+        data: { badge_key: key, icon: def.icon },
+        read: false
+      });
     }
   }
 

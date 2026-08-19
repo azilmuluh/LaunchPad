@@ -1,5 +1,6 @@
 import supabase from './_supabase.js';
 import jwt from 'jsonwebtoken';
+import { sendOneSignalNotification } from './_onesignal.js';
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
@@ -30,13 +31,16 @@ export default async function handler(req, res) {
         return res.status(200).json({ user: u, extra: ex || {}, stats: st || {}, posts: posts || [], badges: badges || [] });
       }
 
-      if (mode === 'suggestions' && me) {
+      // Check authentication for suggestions/network/requests/status
+      if (!me) return res.status(401).json({ error: 'Unauthorized' });
+
+      if (mode === 'suggestions') {
         const { data: myUser } = await supabase.from('lp_users').select('interests').eq('id', me).single();
         const myInterests = JSON.parse(myUser?.interests || '[]');
         const { data: conns } = await supabase.from('lp_connections').select('requester_id,addressee_id').or(`requester_id.eq.${me},addressee_id.eq.${me}`);
         const connectedIds = new Set((conns || []).flatMap(c => [c.requester_id, c.addressee_id]).filter(id => id !== me));
         connectedIds.add(me);
-        const { data: users } = await supabase.from('lp_users').select('id,full_name,education_level,location,interests').neq('id', me).limit(50);
+        const { data: users } = await supabase.from('lp_users').select('id,full_name,education_level,location,interests').neq('id', me).limit(500);
         const { data: extras } = await supabase.from('lp_user_extra').select('user_id,avatar_url');
         const extraMap = Object.fromEntries((extras || []).map(e => [e.user_id, e]));
         const scored = (users || [])
@@ -84,6 +88,33 @@ export default async function handler(req, res) {
       if (existing) return res.status(409).json({ error: 'Connection already exists', status: existing.status });
       const { data, error } = await supabase.from('lp_connections').insert({ requester_id: me, addressee_id, status: 'pending' }).select().single();
       if (error) throw error;
+
+      // Create notification
+      const { data: meUser } = await supabase.from('lp_users').select('full_name').eq('id', me).single();
+      if (meUser) {
+        await supabase.from('lp_notifications').insert({
+          user_id: addressee_id,
+          type: 'connection_request',
+          title: 'New Connection Request',
+          content: `${meUser.full_name} wants to connect with you.`,
+          data: { requester_id: me },
+          read: false
+        });
+
+        // Send push notification
+        try {
+          await sendOneSignalNotification({
+            headings: 'New Connection Request',
+            contents: `${meUser.full_name} wants to connect with you.`,
+            externalUserIds: [addressee_id],
+            userId: addressee_id,
+            category: 'community',
+            url: `${process.env.PUBLIC_APP_URL || ''}/network`,
+            data: { type: 'connection_request', requester_id: me },
+          });
+        } catch (e) { console.error('Push notification error:', e); }
+      }
+
       return res.status(201).json(data);
     }
 
@@ -93,6 +124,33 @@ export default async function handler(req, res) {
       if (!conn || conn.addressee_id !== me) return res.status(403).json({ error: 'Forbidden' });
       if (action === 'accept') {
         await supabase.from('lp_connections').update({ status: 'accepted' }).eq('id', connection_id);
+        
+        // Create notification
+        const { data: meUser } = await supabase.from('lp_users').select('full_name').eq('id', me).single();
+        if (meUser) {
+          await supabase.from('lp_notifications').insert({
+            user_id: conn.requester_id,
+            type: 'connection_accept',
+            title: 'Connection Accepted',
+            content: `${meUser.full_name} accepted your connection request.`,
+            data: { acceptor_id: me },
+            read: false
+          });
+
+          // Send push notification
+          try {
+            await sendOneSignalNotification({
+              headings: 'Connection Accepted',
+              contents: `${meUser.full_name} accepted your connection request.`,
+              externalUserIds: [conn.requester_id],
+              userId: conn.requester_id,
+              category: 'community',
+              url: `${process.env.PUBLIC_APP_URL || ''}/network`,
+              data: { type: 'connection_accept', acceptor_id: me },
+            });
+          } catch (e) { console.error('Push notification error:', e); }
+        }
+
         return res.status(200).json({ status: 'accepted' });
       }
       await supabase.from('lp_connections').delete().eq('id', connection_id);

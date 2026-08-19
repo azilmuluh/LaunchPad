@@ -8,11 +8,10 @@
 [functions]
   node_bundler = "esbuild"
 
-[functions."daily-refresh"]
-  schedule = "0 0 * * *"
+# ── Auto-Opportunity Lifecycle scheduled functions ───────────────────────────
+[functions."cleanup-opportunity-pages"]
+  schedule = "0 2 * * *"   # Daily at 2 AM UTC — Requirement 2.1
 
-[functions."scheduled-match-notify"]
-  schedule = "0 * * * *"
 
 [[redirects]]
   from = "/api/*"

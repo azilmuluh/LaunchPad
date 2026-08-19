@@ -1152,20 +1152,30 @@ const TRANSLATIONS = {
 
 export function useI18n() {
   const [lang, setLang] = useState<'en' | 'fr'>(() => {
-    return (localStorage.getItem('lp_lang') as 'en' | 'fr') || 'en';
+    try {
+      const saved = localStorage.getItem('lp_lang');
+      return (saved === 'fr' || saved === 'en') ? saved : 'en';
+    } catch {
+      return 'en';
+    }
   });
 
   useEffect(() => {
-    localStorage.setItem('lp_lang', lang);
-    document.documentElement.lang = lang;
+    try {
+      localStorage.setItem('lp_lang', lang);
+      document.documentElement.lang = lang;
+    } catch {}
   }, [lang]);
 
   const t = (key: string, params: any = {}) => {
-    let text = (TRANSLATIONS[lang] as any)[key] || (TRANSLATIONS.en as any)[key] || key;
+    const langDict = TRANSLATIONS[lang] || TRANSLATIONS.en;
+    let text = (langDict as any)?.[key] ?? (TRANSLATIONS.en as any)?.[key] ?? key;
     if (typeof text !== 'string') return text;
-    Object.keys(params).forEach(p => {
-      text = text.replace(`{${p}}`, params[p]);
-    });
+    if (params && typeof params === 'object') {
+      Object.keys(params).forEach(p => {
+        text = text.replace(`{${p}}`, String(params[p]));
+      });
+    }
     return text;
   };
 

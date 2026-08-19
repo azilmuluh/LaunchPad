@@ -1,7 +1,3 @@
-/**
- * Service Worker for Push Notifications
- * Handles incoming push notifications and displays them to users
- */
 
 // Install event
 self.addEventListener('install', (event) => {

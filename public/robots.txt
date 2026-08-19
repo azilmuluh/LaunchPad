@@ -1,11 +1,16 @@
 User-agent: *
 Allow: /
-Allow: /assets/
-Allow: /static/
+Allow: /login
+Allow: /signup
+
 Disallow: /api/
+Disallow: /feed
 Disallow: /settings
 Disallow: /profile
 Disallow: /ai
 Disallow: /bookmarks
+Disallow: /post
+Disallow: /network
+Disallow: /blips
 
 Sitemap: https://launchpadcm.netlify.app/sitemap.xml
