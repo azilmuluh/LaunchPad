@@ -837,40 +837,67 @@ function getApplicationSteps(o) {
 }
 
 export async function seedOpportunities() {
+  // 1. Prepare master featured list of all top 25 opportunities
+  const featuredOpps = OPPORTUNITIES.filter(o => o.featured);
+
+  const processOpp = (o, idx, customTag) => ({
+    id: o.featured ? `featured-${o.featured_rank}` : `static-${customTag || o.tag}-${idx}`,
+    title: o.title,
+    link: o.link,
+    snippet: o.snippet,
+    description: o.snippet,
+    source: o.source,
+    tag: customTag || o.tag,
+    category: o.category,
+    deadline: o.deadline || null,
+    eligibility: o.eligibility || null,
+    benefits: o.benefits || null,
+    location: o.location || null,
+    amount: o.amount || extractAmount(o.title + ' ' + o.snippet),
+    degree_level: o.degree_level || extractDegreeLevel(o.title + ' ' + o.snippet),
+    country_focus: o.country_focus || extractCountryFocus(o.title + ' ' + o.snippet),
+    application_steps: getApplicationSteps(o),
+    application_checklist: getApplicationSteps(o),
+    featured: o.featured || false,
+    featured_rank: o.featured_rank || null,
+    verified: true,
+  });
+
   // Group by tag
   const byTag = {};
   for (const opp of OPPORTUNITIES) {
-    if (!byTag[opp.tag]) byTag[opp.tag] = [];
-    byTag[opp.tag].push(opp);
+    const t = opp.tag;
+    if (!byTag[t]) byTag[t] = [];
+    byTag[t].push(opp);
   }
 
-  const now = new Date().toISOString();
-  // Set cache far in the future so it always serves (12h TTL from now)
+  // Alias tags to ensure all user interest profiles get rich opportunities
+  const aliasMap = {
+    'digital_media': ['technology', 'international_relations', 'arts'],
+    'media_communication': ['international_relations', 'arts', 'leadership'],
+    'social_work': ['leadership', 'medicine', 'education', 'research'],
+    'stem': ['technology', 'data_science', 'research', 'engineering'],
+    'international_relations': ['leadership', 'research', 'entrepreneurship'],
+    'leadership': ['entrepreneurship', 'education', 'research'],
+  };
+
+  for (const [aliasTag, sourceTags] of Object.entries(aliasMap)) {
+    const combined = [];
+    for (const src of sourceTags) {
+      if (byTag[src]) combined.push(...byTag[src]);
+    }
+    byTag[aliasTag] = Array.from(new Set([...(byTag[aliasTag] || []), ...combined]));
+  }
+
+  // Always seed 'featured' tag with all 25 top opportunities
+  byTag['featured'] = featuredOpps;
+  byTag['general'] = featuredOpps;
+  byTag['all'] = featuredOpps;
+
   const cacheTime = new Date(Date.now() - 1000).toISOString();
 
   for (const [tag, opps] of Object.entries(byTag)) {
-    const processed = opps.map((o, idx) => ({
-      id: o.featured ? `featured-${o.featured_rank}` : `static-${tag}-${idx}`,
-      title: o.title,
-      link: o.link,
-      snippet: o.snippet,
-      description: o.snippet,
-      source: o.source,
-      tag,
-      category: o.category,
-      deadline: o.deadline || null,
-      eligibility: o.eligibility || null,
-      benefits: o.benefits || null,
-      location: o.location || null,
-      amount: o.amount || extractAmount(o.title + ' ' + o.snippet),
-      degree_level: o.degree_level || extractDegreeLevel(o.title + ' ' + o.snippet),
-      country_focus: o.country_focus || extractCountryFocus(o.title + ' ' + o.snippet),
-      application_steps: getApplicationSteps(o),
-      application_checklist: getApplicationSteps(o),
-      featured: o.featured || false,
-      featured_rank: o.featured_rank || null,
-      verified: true,
-    }));
+    const processed = opps.map((o, idx) => processOpp(o, idx, tag));
 
     const { error } = await supabase.from('lp_tag_cache').upsert(
       { tag, results: JSON.stringify(processed), cached_at: cacheTime },
@@ -879,7 +906,7 @@ export async function seedOpportunities() {
     if (error) console.error(`Seed error for ${tag}:`, error.message);
     else console.log(`[Seed] Seeded ${processed.length} opps for tag: ${tag}`);
   }
-  console.log('[Seed] Static opportunity library seeded.');
+  console.log('[Seed] Static opportunity library seeded successfully.');
 }
 
 export default async function handler(req, res) {

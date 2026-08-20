@@ -303,11 +303,23 @@ export default async function handler(req, res) {
     const effectiveLocationMode = location_mode || userSettings.location_mode || 'all';
     const effectiveUserLocation = user_location || userSettings.user_location || user.location || user.region || '';
 
-    const effectiveTags = reqTag
-      ? [reqTag]
-      : interests.length > 0
-        ? interests.slice(0, 10)
-        : ['technology','business','engineering','education','medicine','research','entrepreneurship','data_science','arts','agriculture'];
+    const normalizedInterests = interests.flatMap(i => {
+      const s = String(i).toLowerCase().trim();
+      const slug = s.replace(/[^a-z0-9]+/g, '_');
+      const words = s.split(/[^a-z0-9]+/);
+      return [i, slug, ...words];
+    }).filter(Boolean);
+
+    // Always query 'featured' tag cache as well as normalized interests & core tags
+    const queryTags = Array.from(new Set([
+      'featured',
+      'general',
+      'all',
+      ...(reqTag ? [reqTag, reqTag.toLowerCase().replace(/[^a-z0-9]+/g, '_')] : normalizedInterests),
+      'technology', 'entrepreneurship', 'leadership', 'data_science', 'stem', 'international_relations', 'research', 'medicine', 'education', 'business'
+    ]));
+
+    const effectiveTags = reqTag ? [reqTag] : (normalizedInterests.length ? normalizedInterests : ['featured']);
 
     const now = new Date();
     const cacheExpiry = new Date(now.getTime() - CACHE_HOURS * 60 * 60 * 1000);
@@ -317,7 +329,7 @@ export default async function handler(req, res) {
       { data: allCacheRows },
       { data: verifiedPosts },
     ] = await Promise.all([
-      supabase.from('lp_tag_cache').select('tag, results, cached_at').in('tag', effectiveTags),
+      supabase.from('lp_tag_cache').select('tag, results, cached_at').in('tag', queryTags),
       supabase.from('lp_verified_opps').select('*').eq('verified', true).order('created_at', { ascending: false }).limit(60),
     ]);
 
@@ -325,7 +337,7 @@ export default async function handler(req, res) {
 
     // ── Community-verified opportunities ──────────────────────────────────────
     for (const v of verifiedPosts || []) {
-      if (effectiveTags.length && v.tag && !effectiveTags.includes(v.tag)) continue;
+      if (reqTag && v.tag && v.tag !== reqTag) continue;
       allOpps.push({
         id: `verified-${v.id}`,
         title: v.title,
@@ -344,26 +356,15 @@ export default async function handler(req, res) {
       });
     }
 
-    // ── Process cached tag results (already loaded in one query above) ────────
-    const cacheByTag = {};
-    for (const row of allCacheRows || []) {
-      cacheByTag[row.tag] = row;
-    }
-
+    // ── Process all returned cache rows ───────────────────────────────────────
     let needsLiveRefresh = false;
 
-    for (const tag of effectiveTags) {
-      const cacheRow = cacheByTag[tag];
+    for (const row of allCacheRows || []) {
       let cachedResults = [];
-      if (cacheRow) {
-        try { cachedResults = JSON.parse(cacheRow.results || '[]'); } catch {}
-      }
+      try { cachedResults = JSON.parse(row.results || '[]'); } catch {}
 
-      const cacheIsFresh = cacheRow && !forceRefresh &&
-        new Date(cacheRow.cached_at) >= cacheExpiry;
-
-      // If cache is stale or empty, flag for background refresh
-      if (!cacheIsFresh) needsLiveRefresh = true;
+      const cacheIsFresh = !forceRefresh && new Date(row.cached_at) >= cacheExpiry;
+      if (!cacheIsFresh && effectiveTags.includes(row.tag)) needsLiveRefresh = true;
 
       // Serve from cache immediately (static + previous live results)
       const tagResults = filterOpportunities(cachedResults);
@@ -379,7 +380,7 @@ export default async function handler(req, res) {
 
       // Personalization scoring
       const scored = active.map(op => {
-        let score = 0;
+        let score = op.featured ? 500 : 0;
         const text = (op.title + ' ' + (op.snippet || '')).toLowerCase();
         if (text.includes('cameroon') || text.includes('cmr')) score += 100;
         if (text.includes('africa')) score += 30;
