@@ -193,30 +193,50 @@ export default function OpportunityDetailPage({ user }: any) {
   };
 
   const generateDefaultChecklist = () => {
-    const defaultItems: ChecklistItem[] = [
-      { id: '1', text: 'Read all eligibility requirements carefully', completed: false },
-      { id: '2', text: 'Gather required documents (ID, transcripts, certificates)', completed: false },
-      { id: '3', text: 'Draft motivation letter / personal statement', completed: false },
-      { id: '4', text: 'Request recommendation letters (if required)', completed: false },
-      { id: '5', text: 'Prepare CV/Resume', completed: false },
-      { id: '6', text: 'Review application form and questions', completed: false },
-      { id: '7', text: 'Complete online application', completed: false },
-      { id: '8', text: 'Proofread all materials', completed: false },
-      { id: '9', text: 'Submit application before deadline', completed: false },
-      { id: '10', text: 'Save confirmation email/receipt', completed: false },
-    ];
+    let customSteps: string[] = [];
+    if (Array.isArray(opportunity.application_steps) && opportunity.application_steps.length > 0) {
+      customSteps = opportunity.application_steps;
+    } else if (Array.isArray(opportunity.application_checklist) && opportunity.application_checklist.length > 0) {
+      customSteps = opportunity.application_checklist;
+    }
+
+    const defaultItems: ChecklistItem[] = customSteps.length > 0
+      ? customSteps.map((step: string, idx: number) => ({
+          id: String(idx + 1),
+          text: step.replace(/^\d+[\.\)]\s*/, ''),
+          completed: false,
+        }))
+      : [
+          { id: '1', text: 'Read all eligibility requirements carefully', completed: false },
+          { id: '2', text: 'Gather required documents (ID, transcripts, certificates)', completed: false },
+          { id: '3', text: 'Draft motivation letter / personal statement', completed: false },
+          { id: '4', text: 'Request recommendation letters (if required)', completed: false },
+          { id: '5', text: 'Prepare CV/Resume', completed: false },
+          { id: '6', text: 'Review application form and questions', completed: false },
+          { id: '7', text: 'Complete online application', completed: false },
+          { id: '8', text: 'Proofread all materials', completed: false },
+          { id: '9', text: 'Submit application before deadline', completed: false },
+          { id: '10', text: 'Save confirmation email/receipt', completed: false },
+        ];
     
     // Load saved checklist from localStorage
     const saved = localStorage.getItem(`checklist_${opportunity.id}`);
     if (saved) {
       try {
-        setChecklist(JSON.parse(saved));
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length === defaultItems.length) {
+          setChecklist(parsed);
+          const completed = parsed.filter((item: any) => item.completed).length;
+          setChecklistProgress(Math.round((completed / parsed.length) * 100));
+          return;
+        }
       } catch {
-        setChecklist(defaultItems);
+        // fallback
       }
-    } else {
-      setChecklist(defaultItems);
     }
+    setChecklist(defaultItems);
+    const completed = defaultItems.filter(item => item.completed).length;
+    setChecklistProgress(Math.round((completed / defaultItems.length) * 100));
   };
 
   const toggleChecklistItem = (id: string) => {

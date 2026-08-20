@@ -448,11 +448,20 @@ export default async function handler(req, res) {
 
     const unique = filterOpportunities(locationFiltered);
 
-    // ── Shuffle for variety per refresh nonce ────────────────────────────────
+    // ── Prioritize Featured Top 25, then shuffle unverified ──────────────────
     const verifiedOpps   = unique.filter(op => op.verified);
     const unverifiedOpps = unique.filter(op => !op.verified);
+
+    // Sort verified opportunities: featured_rank (1..25) first in rank order
+    const sortedVerified = [...verifiedOpps].sort((a, b) => {
+      const rankA = a.featured_rank != null ? a.featured_rank : (a.featured ? 50 : 999);
+      const rankB = b.featured_rank != null ? b.featured_rank : (b.featured ? 50 : 999);
+      if (rankA !== rankB) return rankA - rankB;
+      return (b._score || 0) - (a._score || 0);
+    });
+
     const shuffleSeed    = `${nonce}-${decoded.userId}-p${pageNum}`;
-    const shuffled       = [...verifiedOpps, ...seededShuffle(unverifiedOpps, shuffleSeed)];
+    const shuffled       = [...sortedVerified, ...seededShuffle(unverifiedOpps, shuffleSeed)];
 
     // ── Search filter ─────────────────────────────────────────────────────────
     let searched = shuffled;

@@ -1,15 +1,668 @@
 /**
  * Static opportunity seed — 10+ real opportunities per interest tag + per category.
- * Called once at startup if cache is empty. All data is 2026-accurate.
+ * Top 25 featured opportunities are prioritized first with rich checklists & verified data.
+ * All data is 2026-accurate.
  */
 import supabase from './_supabase.js';
 
 const NOW = new Date().toISOString();
 
 // ─── MASTER OPPORTUNITY LIBRARY ───────────────────────────────────────────────
-// Each entry: { title, link, snippet, source, tag, category, deadline, eligibility, benefits, location }
 export const OPPORTUNITIES = [
+  // ═══════════════════════════════════════════════════════════════════════════
+  // ── FEATURED TOP 25: VERIFIED GLOBAL RESEARCH & LEADERSHIP OPPORTUNITIES ──
+  // ═══════════════════════════════════════════════════════════════════════════
 
+  {
+    "featured": true,
+    "featured_rank": 1,
+    "tag": "technology",
+    "category": "competition",
+    "title": "Technovation Girls Global Challenge 2026–2027",
+    "source": "Technovation Girls",
+    "link": "https://technovationchallenge.org",
+    "deadline": "Season runs Aug–May • Submissions close mid-April 2027",
+    "eligibility": "Ages 8–18 as of Aug 1; female, trans, non-binary, or gender non-conforming • Teams of 1–5 students • No prior coding experience required • Free to participate • Divisions: Beginner (8–12), Junior (13–15), Senior (16–18)",
+    "benefits": "Free curriculum & mentorship • Educational stipends for finalists ($500–$750/person) and Regional Honors ($250/person) • Invitation to pitch at the World Summit",
+    "location": "Online (Global) + World Summit",
+    "amount": "Free / $500–$750 stipends for finalists",
+    "degree_level": "High School",
+    "country_focus": "Global",
+    "application_steps": [
+      "Register on the Technovation platform (student + parent/guardian consent form) starting August.",
+      "Form or join a team of 1–5 students in your age division (Beginner, Junior, or Senior).",
+      "Optionally recruit a professional STEM mentor or educator to guide your team.",
+      "Work through the 12-week curriculum to identify a specific community problem.",
+      "Build a mobile app prototype (Thunkable / MIT App Inventor) or an AI-powered tool.",
+      "Submit project description, business & user-adoption plan, technical demo video, and pitch video.",
+      "Submit all materials before the season deadline (typically mid-April)."
+    ],
+    "snippet": "Technovation Girls is a free global tech entrepreneurship program across 80+ countries empowering girls and non-binary youth ages 8–18 to build mobile apps or AI tools solving local community problems. Teams receive free curriculum, mentor matching, and compete for educational stipends up to $750/person and World Summit invitations."
+  },
+
+  {
+    "featured": true,
+    "featured_rank": 2,
+    "tag": "entrepreneurship",
+    "category": "competition",
+    "title": "The Conrad Challenge 2026–2027",
+    "source": "Conrad Foundation / Space Center Houston",
+    "link": "https://www.conradchallenge.org",
+    "deadline": "Activation Stage: ~Oct 30, 2026 • Innovation Stage: ~Jan 8, 2027 • Summit: April 2027",
+    "eligibility": "Ages 13–18 during competition year • Teams of 2–5 students + 1 adult coach (18+) • International & mixed-school teams welcome • 5 categories: Aerospace & Aviation, Cyber-Technology & Security, Energy & Environment, Health & Nutrition, Sustainable Development",
+    "benefits": "Mentorship from industry judges (Google, Blue Origin, Equinor) • Pete Conrad Scholar title • University scholarships up to $25,000/year • International trip prizes • Live pitch at Space Center Houston",
+    "location": "Houston, USA (Summit) / Online (submissions)",
+    "amount": "Up to $25,000/year University Scholarships",
+    "degree_level": "High School",
+    "country_focus": "Global",
+    "application_steps": [
+      "Assemble a team of 2–5 students (ages 13–18) and find an adult coach (age 18+).",
+      "Register all team members via the Conrad Portal (conrad.spacecenter.org).",
+      "Review Student Guide, Rules & Regulations, and category briefs.",
+      "Complete Activation Stage (team formation, challenge track selection, idea brainstorm) by Oct 30, 2026.",
+      "Complete Innovation Stage: submit Lean Canvas, Innovation Brief, demo video, and business plan by Jan 8, 2027.",
+      "Finalists prepare a 10-minute Power Pitch for the Innovation Summit at Space Center Houston (April 2027)."
+    ],
+    "snippet": "The Conrad Challenge is an annual STEM innovation and entrepreneurship competition for student teams aged 13–18 worldwide. Teams design commercially viable solutions in aerospace, cyber-tech, health, and clean energy, competing for up to $25,000/year scholarships and pitching before venture judges at Space Center Houston."
+  },
+
+  {
+    "featured": true,
+    "featured_rank": 3,
+    "tag": "stem",
+    "category": "event",
+    "title": "The Junior Academy – NYAS Global STEM Alliance",
+    "source": "New York Academy of Sciences",
+    "link": "https://www.nyas.org/programs/global-stem-alliance/the-junior-academy",
+    "deadline": "Applications open Spring 2027 (Fall cycle ran April 1–July 9, 2026)",
+    "eligibility": "Ages 13–17 (must turn 13 by Sept 1, must not turn 18 before May 1) • Strong English proficiency • Parental/guardian consent required • Free • 3–4 hrs/week commitment",
+    "benefits": "Global STEM network across 100+ countries • Expert STEM mentorship • Certificate of completion • Complimentary NYAS Young Membership • Competitive ~15–20% acceptance",
+    "location": "Online (Launchpad Platform)",
+    "amount": "Free / Full Fellowship",
+    "degree_level": "High School",
+    "country_focus": "Global",
+    "application_steps": [
+      "Complete the online application in English with short essay responses on gsa.smapply.io.",
+      "Submit signed parental/guardian consent form.",
+      "Confirm age eligibility (13–17) and English communication proficiency.",
+      "Await admission decision (~1 month after application cycle closes).",
+      "Complete orientation kickoff week and join a virtual challenge team on the Launchpad portal.",
+      "Collaborate with assigned STEM professional mentor on an intense 10-week UN SDG challenge sprint."
+    ],
+    "snippet": "The Junior Academy by the New York Academy of Sciences connects elite STEM students aged 13–17 across 100+ countries to tackle real-world global challenges. Working in virtual teams on the NYAS Launchpad with professional researcher mentors, participants design solutions to UN SDGs with full NYAS membership benefits."
+  },
+
+  {
+    "featured": true,
+    "featured_rank": 4,
+    "tag": "international_relations",
+    "category": "competition",
+    "title": "Harvard International Review Academic Writing Contest",
+    "source": "Harvard International Review",
+    "link": "https://hir.harvard.edu/contest",
+    "deadline": "Summer cycle: ~Aug 24, 2026 • Fall/Winter cycle: ~Jan 2, 2027",
+    "eligibility": "Grades 7–12 globally (Junior div: 7th–8th; Senior div: 9th–12th) • 800–1,200 words analytical article (not opinion) in English with proper citations • No AI tools permitted",
+    "benefits": "Gold, Silver, and Bronze medal awards • Publication opportunities in Harvard International Review • Certificate of completion for all participants • 15-min virtual Defense Day before HIR Board",
+    "location": "Online (Global)",
+    "amount": "Medals & Harvard Journal Publication",
+    "degree_level": "High School",
+    "country_focus": "Global",
+    "application_steps": [
+      "Choose your division (Junior: grades 7–8 / Senior: grades 9–12) and target submission cycle.",
+      "Register and pay entry fee before registration deadline (financial aid fee waivers available upon request).",
+      "Select an official prompt/theme on international diplomacy, geopolitics, or global policy.",
+      "Draft an 800–1,200-word analytical article with Chicago/APA citations and original research (strictly human-written, no AI tools).",
+      "Submit article in .doc/.docx or PDF before the submission deadline.",
+      "If selected as finalist, prepare 15-minute presentation and oral defense for virtual Defense Day with Harvard editors."
+    ],
+    "snippet": "The Harvard International Review Academic Writing Contest invites secondary students in grades 7–12 worldwide to write rigorous 800–1,200 word analytical essays on global policy and foreign affairs. Finalists defend their work before the Harvard editorial board with opportunities for global journal publication."
+  },
+
+  {
+    "featured": true,
+    "featured_rank": 5,
+    "tag": "technology",
+    "category": "scholarship",
+    "title": "MIT Women's Technology Program (WTP)",
+    "source": "MIT School of Engineering",
+    "link": "https://wtp.mit.edu",
+    "deadline": "Applications open mid-Nov, close mid-December • Decisions mid-April",
+    "eligibility": "Current 11th-grade female students • ⚠️ HARD BAR: Must have permanent family home address in the U.S. (international residents outside U.S. are NOT eligible) • Strong math/science record; little to no prior engineering background required",
+    "benefits": "Fully funded (tuition-free) • 4-week MIT campus residency • Hands-on labs taught by MIT grad students • ~20 selected per year from 300+ pool • MIT housing & dining covered",
+    "location": "MIT Campus, Cambridge, MA, USA",
+    "amount": "Fully Funded (Tuition-free + Housing & Meals)",
+    "degree_level": "High School",
+    "country_focus": "U.S. Residents Only (Hard Requirement)",
+    "application_steps": [
+      "⚠️ Confirm U.S. permanent family residency requirement (students based outside the U.S. are not eligible).",
+      "Complete free online SlideRoom application starting mid-November.",
+      "Upload high school transcripts for grades 9, 10, and fall grade 11 report.",
+      "Upload standardized test score reports (if available; optional).",
+      "Request 2 online Teacher Reference Forms (1 math teacher + 1 science teacher).",
+      "Submit complete application before the mid-December deadline."
+    ],
+    "snippet": "The MIT Women's Technology Program is an elite, tuition-free 4-week summer academic residency on MIT's campus for rising female high school seniors. Selected students conduct intensive hands-on laboratory research in mechanical engineering under MIT graduate student mentorship. Note: strictly requires permanent U.S. family residence."
+  },
+
+  {
+    "featured": true,
+    "featured_rank": 6,
+    "tag": "leadership",
+    "category": "scholarship",
+    "title": "African Leadership Academy (ALA) Diploma Program — Class of 2027",
+    "source": "African Leadership Academy",
+    "link": "https://www.africanleadershipacademy.org/apply",
+    "deadline": "Early Decision: Oct 15, 2026 • Regular Decision: Jan 15, 2027",
+    "eligibility": "African nationals born on or after Sept 1, 2007 (ages 15–18) • Minimum Grade 10 completion • Evaluated on: intellectual readiness, courage/perseverance, ownership, interdependence",
+    "benefits": "2-year pre-university residential diploma in Johannesburg • 97% of students receive need-based financial aid • Alumni network at 342+ global universities • $270M+ cumulative scholarship funding",
+    "location": "Johannesburg, South Africa",
+    "amount": "Full Scholarship / Need-Based Aid Available",
+    "degree_level": "High School",
+    "country_focus": "Africa",
+    "application_steps": [
+      "Confirm birth-date eligibility (born on or after Sept 1, 2007 for Class of 2027).",
+      "Register on the Submittable admissions portal (available in English, French, and Portuguese).",
+      "Draft personal essays reflecting ALA's core traits: intellectual readiness, courage, ownership, and interdependence.",
+      "Upload official academic transcripts from Grade 9 to current grade level.",
+      "Select application round: Early Decision (Oct 15, 2026) or Regular Decision (Jan 15, 2027).",
+      "Attend finalist interview and leadership assessment if shortlisted (Nov–Dec for ED, Feb–Mar for RD).",
+      "Submit need-based financial aid documentation upon admission offer."
+    ],
+    "snippet": "The African Leadership Academy is a world-renowned 2-year pre-university residential program in Johannesburg developing the next generation of African transformative leaders. ALA provides Cambridge A-Levels alongside Entrepreneurial Leadership, with 97% of students receiving financial aid and alumni securing over $270M in global university scholarships."
+  },
+
+  {
+    "featured": true,
+    "featured_rank": 7,
+    "tag": "leadership",
+    "category": "scholarship",
+    "title": "Yale Young African Scholars (YYAS) & YYGS 2027",
+    "source": "Yale University",
+    "link": "https://africanscholars.yale.edu",
+    "deadline": "YYGS Early Action: ~Oct 15, 2026 • YYAS / YYGS Regular: ~Jan 6–7, 2027",
+    "eligibility": "YYAS: African citizens/residents, grades 10–11, ages 14–18, free • YYGS: Grades 10–11 globally, ages 16–18, need-based aid up to 100% tuition available",
+    "benefits": "YYAS: Free tuition & admissions mentorship • YYGS: 2-week Yale campus residency, faculty lectures, STEM/humanities tracks, full need-based aid available",
+    "location": "Yale University, New Haven, USA / Residential Summit in Kenya / Online",
+    "amount": "Fully Funded (YYAS) / Up to 100% Aid (YYGS)",
+    "degree_level": "High School",
+    "country_focus": "Africa / Global",
+    "application_steps": [
+      "Review eligibility criteria for YYAS (African track) and YYGS (global Yale campus track) and indicate interest on shared application.",
+      "Complete online application form including 400–500 word main essay and short answer questions.",
+      "Upload official transcripts for each year of secondary school completed.",
+      "Have 1 academic recommender fill out the official online recommendation form.",
+      "Submit by Early Action (Oct 15, 2026) or Regular Decision (early January 2027).",
+      "Apply for YYGS need-based financial aid or fee waiver during the submission flow if applying for Yale campus sessions."
+    ],
+    "snippet": "Yale Young African Scholars (YYAS) and Yale Young Global Scholars (YYGS) offer transformative academic and leadership enrichment for high school students. YYAS provides free university guidance and leadership training for African secondary students, while YYGS brings global cohorts to Yale's campus with full need-based aid packages."
+  },
+
+  {
+    "featured": true,
+    "featured_rank": 8,
+    "tag": "international_relations",
+    "category": "event",
+    "title": "Georgetown University International Relations Academy",
+    "source": "Georgetown University Summer High School Programs",
+    "link": "https://summer.georgetown.edu/programs/SHS14/international-relations-academy/",
+    "deadline": "Early Bird: Jan 31, 2027 (fee waived) • Final deadline: May 15, 2027 • Sessions in June/July 2027",
+    "eligibility": "Current 8th–12th graders • Must be at least 15 years old by check-in • Minimum 2.0 GPA • International students welcome (no visa required for non-credit academies)",
+    "benefits": "1-week immersive academy in Washington, DC • Lectures from Georgetown faculty & embassy visits • Crisis simulations • Certificate of completion",
+    "location": "Georgetown University, Washington D.C., USA",
+    "amount": "Tuition: ~$3,225 residential / $2,500 commuter (Financial aid available)",
+    "degree_level": "High School",
+    "country_focus": "Global",
+    "application_steps": [
+      "Confirm age (15+ by check-in date) and academic eligibility (8th–12th grade, min 2.0 GPA).",
+      "Complete online application form before Early Bird deadline (Jan 31 for fee waiver) or Final deadline (May 15).",
+      "Write a 300–500 word personal statement on your interest in diplomacy and global policy.",
+      "Request School Official Reviewer Form from your teacher, school counselor, or principal.",
+      "International applicants: complete the international student requirements section (no U.S. visa required for non-credit academies).",
+      "Upon acceptance, pay deposit and confirm residential or commuter session placement."
+    ],
+    "snippet": "Georgetown University's International Relations Academy is an intensive 1-week summer pre-college program in Washington, D.C. for students in grades 8–12. Participants explore global affairs, international law, and defense strategy through crisis simulations, embassy visits, and lectures from Georgetown faculty and active diplomats."
+  },
+
+  {
+    "featured": true,
+    "featured_rank": 9,
+    "tag": "entrepreneurship",
+    "category": "grant",
+    "title": "Fast Forward Tech Nonprofit Accelerator — 2027 Cohort",
+    "source": "Fast Forward",
+    "link": "https://www.ffwd.org/accelerator",
+    "deadline": "Applications open late July 2026, close early September 2026 (Open Now)",
+    "eligibility": "Registered nonprofits worldwide (not for-profits or individuals) • Software-based, scalable tech solution with dedicated tech lead • Proximate founders encouraged • English fluency required",
+    "benefits": "$25,000+ unrestricted grant funding • 3-month mentorship & cohort program • In-person kickoff & Demo Day in San Francisco • Access to global philanthropic funder network",
+    "location": "Remote + San Francisco, CA, USA (In-person sessions)",
+    "amount": "$25,000+ Unrestricted Grant",
+    "degree_level": "All Levels",
+    "country_focus": "Global (Registered Nonprofits)",
+    "application_steps": [
+      "Confirm your organization is legally registered as a nonprofit entity in its home jurisdiction.",
+      "Review evaluation criteria: leadership capacity, tech talent, impact potential, and scalability.",
+      "Complete the online application via apply.ffwd.org before the early September deadline.",
+      "Attend optional Fast Forward Application Q&A workshop for strategic guidance.",
+      "Detail your software solution, product roadmap, team composition, and verified social metrics.",
+      "Ensure availability of founders for required in-person participation in San Francisco for kickoff week and Demo Day."
+    ],
+    "snippet": "The Fast Forward Tech Nonprofit Accelerator invests $25,000+ in unrestricted grant capital and provides 3 months of intensive acceleration to early-stage software-focused nonprofit ventures worldwide. Cohort members receive Silicon Valley mentorship, ongoing portfolio services, and pitch at Demo Day before major philanthropic foundations."
+  },
+
+  {
+    "featured": true,
+    "featured_rank": 10,
+    "tag": "entrepreneurship",
+    "category": "competition",
+    "title": "Citizen Entrepreneurship Competition (CEC)",
+    "source": "Entrepreneurship Campus / Stiftung Entrepreneurship",
+    "link": "https://www.entrepreneurship-campus.org",
+    "deadline": "Annual cycle (typically March–June; #CEC27 opens early 2027)",
+    "eligibility": "Age 13+ worldwide • Youth category (13–29) and Adult category (30+) • Idea must address at least one of the 17 UN SDGs • Free to enter",
+    "benefits": "Free training courses (\"Brains vs Capital\", \"Sustainable Entrepreneurship\") • Entrepreneurial Design Canvas template • Global voting showcase • Official certificate • Jury feedback webinar for top-10",
+    "location": "Online (Global)",
+    "amount": "Free / UN SDG Recognition & Training",
+    "degree_level": "All Levels",
+    "country_focus": "Global",
+    "application_steps": [
+      "Create a free user account on entrepreneurship-campus.org.",
+      "Submit your entrepreneurial venture under \"My Idea/Project\" as an \"Idea\" aligned with ≥1 UN Sustainable Development Goal.",
+      "Complete the two mandatory free online training courses: \"Brains versus Capital\" and \"Sustainable Entrepreneurship\".",
+      "Fill out and submit the official Entrepreneurial Design Canvas (EDC) business model template.",
+      "Engage your community during the Public Voting & Feedback Phase to gather support.",
+      "Top-10 finalists deliver their presentation in the live international expert jury webinar."
+    ],
+    "snippet": "The Citizen Entrepreneurship Competition is an annual global contest organized by Stiftung Entrepreneurship in Berlin inviting innovators aged 13+ to submit ideas advancing UN Sustainable Development Goals. Participants gain free entrepreneurial training, structured canvas design mentorship, global voting visibility, and expert jury feedback."
+  },
+
+  {
+    "featured": true,
+    "featured_rank": 11,
+    "tag": "data_science",
+    "category": "competition",
+    "title": "Zindi Africa AI Competitions Platform",
+    "source": "Zindi Africa",
+    "link": "https://zindi.africa",
+    "deadline": "Rolling — continuous live competitions all year round",
+    "eligibility": "Open to anyone globally • Free to join • Knowledge of Python/R and ML helpful • Individual or teams up to 4",
+    "benefits": "Real-world African ML project portfolio • Cash prizes (up to $10,000+ per competition) • Zindi points & leaderboard ranking • Recruiter visibility with top tech firms",
+    "location": "Online (Global)",
+    "amount": "$500–$30,000+ Prize Purses",
+    "degree_level": "All Levels",
+    "country_focus": "Africa / Global",
+    "application_steps": [
+      "Create a free data scientist account at zindi.africa/signup.",
+      "Browse active competitive challenges in machine learning, NLP, computer vision, and time-series forecasting.",
+      "Download the challenge dataset and review evaluation metrics (e.g. Log Loss, F1, RMSE).",
+      "(Optional) Complete free tutorials on Zindi Learn to strengthen modeling techniques.",
+      "Train predictive models in Python or R and submit test set predictions before competition close.",
+      "Monitor public leaderboard, iterate model architectures, and submit verified code within 24 hours if in top winning ranks."
+    ],
+    "snippet": "Zindi is Africa's premier machine learning and data science competition ecosystem hosting 70,000+ practitioners worldwide. Data scientists tackle real-world African challenges across agriculture, healthcare, climate, and finance, earning cash prizes up to $30,000+ and verified profile badges recognized by global tech employers."
+  },
+
+  {
+    "featured": true,
+    "featured_rank": 12,
+    "tag": "data_science",
+    "category": "event",
+    "title": "Data Science Africa (DSA) Summer School",
+    "source": "Data Science Africa",
+    "link": "https://www.datascienceafrica.org/dsa-summer-schools/",
+    "deadline": "Applications open January, close mid-March annually for summer cohort",
+    "eligibility": "Undergraduate & graduate students, researchers, data professionals in Africa • Strong math, stats, or CS background • Entry quiz required",
+    "benefits": "3-day intensive hands-on training (ML, responsible AI, agentic systems) • Academic workshop & poster session • Pan-African networking • DSA certificate",
+    "location": "Hybrid — In-Person African Host Cities + Virtual",
+    "amount": "Free / Subsidized Participation",
+    "degree_level": "Undergraduate / Master's / PhD",
+    "country_focus": "Africa",
+    "application_steps": [
+      "Complete the official online registration form on datascienceafrica.org.",
+      "Download the mandatory DSA beginner quiz exercise pack (zipped technical coding challenge).",
+      "Solve exercises in Python, linear algebra, and data manipulation, then submit results before deadline.",
+      "Await competitive selection results based on quiz performance and motivation statement.",
+      "Attend the 3-day summer school technical sessions covering modern deep learning and edge AI.",
+      "Present research posters or deployable field models during the academic workshop."
+    ],
+    "snippet": "Data Science Africa Summer School is an intensive pan-African training initiative providing practical, end-to-end machine learning and edge AI education. Participants learn from world-class instructors, solve practical computational problems, and present field-deployable research at the international DSA workshop."
+  },
+
+  {
+    "featured": true,
+    "featured_rank": 13,
+    "tag": "data_science",
+    "category": "scholarship",
+    "title": "African Master's in Machine Intelligence (AMMI) — AIMS",
+    "source": "AIMS / Google DeepMind / Meta AI",
+    "link": "https://aimsammi.org",
+    "deadline": "Annual cohort deadline: August–October • Fully funded 1-year Master's",
+    "eligibility": "Bachelor's in Math, CS, Computer/Electrical Engineering or related field • ~B average (≈80%) minimum • Demonstrated interest in AI/ML • Commitment to mentor future students",
+    "benefits": "100% Full scholarship (tuition, room, board, travel) • World-class curriculum taught by Google DeepMind, Meta, NYU, Mila faculty • Deep learning thesis defense • Top AI career pathways",
+    "location": "AIMS Centres (Ghana, Rwanda, Senegal, South Africa, Cameroon)",
+    "amount": "Fully Funded (Tuition, Housing, Board, Stipend)",
+    "degree_level": "Master's",
+    "country_focus": "Africa",
+    "application_steps": [
+      "Verify you hold (or will hold prior to matriculation) a qualifying STEM Bachelor's degree with ≥80% academic standing.",
+      "Create free applicant account on applications.nexteinstein.org.",
+      "Upload complete official transcripts from all post-secondary institutions with certified translations if in other languages.",
+      "Submit CV, statement of mathematical and research background, and motivation letter.",
+      "Provide email addresses for 3 academic or professional referees who will submit letters directly.",
+      "Submit application prior to the annual cohort deadline and prepare for technical entry assessment if shortlisted."
+    ],
+    "snippet": "AIMS AMMI is an elite, fully funded one-year Master's program in Machine Intelligence founded with support from Google DeepMind and Meta AI. Delivered at AIMS centres across Africa by visiting faculty from leading global AI institutions, graduates complete cutting-edge deep learning research and step into premier PhD and research roles."
+  },
+
+  {
+    "featured": true,
+    "featured_rank": 14,
+    "tag": "data_science",
+    "category": "competition",
+    "title": "UN Global Pulse AI Accelerator & Innovation Challenges",
+    "source": "United Nations Global Pulse",
+    "link": "https://www.unglobalpulse.org/accelerator-cohort-4-applications/",
+    "deadline": "Cohort intake windows vary (check official portal)",
+    "eligibility": "⚠️ Note: UN Global Pulse Accelerator requires projects to be led by at least one UN entity • Must address UN SDGs with piloted evidence • External innovators can collaborate with UN agencies or explore ITU AI for Good",
+    "benefits": "Direct acceleration support from UN data scientists • Cross-UN entity partnership building • High-level UN platform showcase • Policy co-authorship",
+    "location": "Online (Global / UN Country Offices)",
+    "amount": "Acceleration Support / Policy Co-authorship",
+    "degree_level": "All Levels",
+    "country_focus": "Global",
+    "application_steps": [
+      "Confirm proposal is partnered with or led by at least one active UN entity (or join ITU AI for Good as independent developer).",
+      "Review official Accelerator guidelines and ensure project aligns with UN Sustainable Development Goals.",
+      "Attend mandatory virtual Accelerator information and Q&A webinars.",
+      "Prepare comprehensive pilot data, ethical AI governance framework, and scalable deployment plan.",
+      "Submit formal proposal through the official UN Global Pulse portal before the stated intake deadline."
+    ],
+    "snippet": "UN Global Pulse Accelerator scales data-driven and AI innovations addressing humanitarian and development crises across the United Nations system. Selected projects receive dedicated technical mentorship, cross-agency integration, and global policy showcase platforms."
+  },
+
+  {
+    "featured": true,
+    "featured_rank": 15,
+    "tag": "data_science",
+    "category": "scholarship",
+    "title": "Code for Africa \"AI for Good\" Fellowship",
+    "source": "Code for Africa / Digitalise Youth",
+    "link": "https://opportunities.codeforafrica.org",
+    "deadline": "4-month remote fellowship • Next cohort applications open early 2027",
+    "eligibility": "Connected to eligible countries: Cameroon, Senegal, Mali, Burkina Faso, Niger, Chad, Sudan, Guinea, Benin, Togo, Mauritania, South Sudan, Ethiopia, Somalia • Proven AI/tech skills for civic/human-rights impact • 6 fellows selected",
+    "benefits": "$500/month stipend for 4 months ($2,000 total) • Mentorship from CfA TechLab & AI Sandbox • Build tools for Human Rights Defenders (HRDs) • Pan-African newsroom publication",
+    "location": "Pan-Africa (Remote with hubs in Nairobi, Lagos, Cape Town, Dakar)",
+    "amount": "$500/month ($2,000 total stipend)",
+    "degree_level": "All Levels",
+    "country_focus": "Cameroon & 13 Sahel/African Nations",
+    "application_steps": [
+      "Confirm citizenship/residency in one of the 14 eligible African nations (including Cameroon).",
+      "Assemble portfolio of previous machine learning, NLP, or civic software projects demonstrating social impact.",
+      "Complete online application form via opportunities.codeforafrica.org before cycle close.",
+      "Highlight specific expertise in building chatbots, automated fact-checking, or multilingual AI tools.",
+      "Complete technical interview and take-home practical assignment if shortlisted.",
+      "Commit to 4 months of remote collaboration embedded with partner Human Rights Defender organisations."
+    ],
+    "snippet": "The Code for Africa AI for Good Fellowship pairs African technologists with Human Rights Defender organisations to engineer open-source ethical AI tools tackling misinformation, civic accountability, and human rights monitoring. Fellows receive a $500/month stipend and technical incubation through CfA's AI Sandbox."
+  },
+
+  {
+    "featured": true,
+    "featured_rank": 16,
+    "tag": "data_science",
+    "category": "competition",
+    "title": "Multilingual Health QA in Low-Resource African Languages (Zindi / HASH)",
+    "source": "Zindi Africa / HASH / ITU",
+    "link": "https://zindi.africa/competitions/multilingual-health-question-answering-in-low-resource-african-languages-challenge",
+    "deadline": "Periodic challenge cycles on Zindi (watch competitions feed)",
+    "eligibility": "AI developers, data scientists, NLP researchers globally (individuals or teams up to 4) • Free to enter on Zindi • Focus on Luganda, Kiswahili, Akan, Amharic",
+    "benefits": "$5,000 USD prize pool • Real-world healthcare NLP portfolio • Exposure to Hub for AI in Maternal & Reproductive Health (HASH) • Contribution to health-equity AI",
+    "location": "Online (Global)",
+    "amount": "$5,000 USD Prize Pool",
+    "degree_level": "All Levels",
+    "country_focus": "Africa / Global",
+    "application_steps": [
+      "Register or log in to your active account on zindi.africa.",
+      "Enroll in the Multilingual Health Question Answering in Low-Resource African Languages Challenge.",
+      "Download and inspect the curated multilingual health dataset (Akan, Kiswahili, Luganda, Amharic).",
+      "Fine-tune open LLMs or build specialized NLP retrieval-augmented generation (RAG) architectures.",
+      "Submit model predictions and evaluate performance using semantic similarity metrics (AfroLM BERTScore).",
+      "Submit documented code and methodology within 24 hours of competition close for prize verification."
+    ],
+    "snippet": "Organized by Zindi in collaboration with the Hub for AI in Maternal, Sexual and Reproductive Health (HASH) and ITU, this competition challenges global machine learning engineers to create accurate question-answering systems for low-resource African languages with a $5,000 cash prize pool."
+  },
+
+  {
+    "featured": true,
+    "featured_rank": 17,
+    "tag": "medicine",
+    "category": "competition",
+    "title": "AI for Reproductive Health Innovation Challenge (HASH / IDRC)",
+    "source": "HASH Network / Global Health Research",
+    "link": "https://ai-globalhealthresearch.tghn.org/partners/hash/",
+    "deadline": "Periodic call for proposals (check HASH portal)",
+    "eligibility": "Multidisciplinary teams based in Sub-Saharan Africa (health, tech, data science, social sciences) • Applying AI to maternal, sexual, or reproductive health challenges",
+    "benefits": "Seed funding for winning prototypes • Technical mentorship from global health AI experts • Presentation at regional health summits • Access to HASH research network",
+    "location": "Sub-Saharan Africa (Online / Regional Summits)",
+    "amount": "Seed Funding + Technical Grants",
+    "degree_level": "All Levels",
+    "country_focus": "Sub-Saharan Africa",
+    "application_steps": [
+      "Form a cross-disciplinary team featuring at least one healthcare specialist and one software/AI engineer.",
+      "Identify an underserved maternal or reproductive health problem in Sub-Saharan Africa.",
+      "Check current open call on the HASH / Global Health Research portal.",
+      "Draft a detailed concept note outlining AI methodology, clinical validation, and patient privacy protocols.",
+      "Submit proposal through the official portal before the stated cycle deadline.",
+      "Shortlisted teams pitch prototype solutions to an international panel of global health and AI experts."
+    ],
+    "snippet": "Supported by IDRC and the Global Health Research network, the AI for Reproductive Health Innovation Challenge accelerates African teams applying machine learning to maternal, sexual, and reproductive healthcare, offering seed grants, clinical mentorship, and regional summit showcase opportunities."
+  },
+
+  {
+    "featured": true,
+    "featured_rank": 18,
+    "tag": "research",
+    "category": "grant",
+    "title": "Wellcome Trust AI & Digital Health Grants",
+    "source": "Wellcome Trust UK",
+    "link": "https://wellcome.org/grant-funding",
+    "deadline": "Multiple concurrent funding schemes (check portal for open calls)",
+    "eligibility": "Researchers, institutions, and digital health innovators • Often requires research institution affiliation • Strong priority for Low- and Middle-Income Countries (LMICs)",
+    "benefits": "Large-scale research grants (£500,000 to £2M+ GBP) • Multi-year research support • Major journal publication support • Global health policy integration",
+    "location": "Global (UK / LMIC priority)",
+    "amount": "£500,000 – £2,000,000+ GBP",
+    "degree_level": "PhD / Postdoc / Research Institutions",
+    "country_focus": "Global / LMIC & Africa Priority",
+    "application_steps": [
+      "Visit wellcome.org/grant-funding to browse active schemes in AI diagnostics and digital health.",
+      "Verify applicant and administering institution eligibility for the targeted funding instrument.",
+      "Review scheme-specific guidance notes, milestones, and data management requirements.",
+      "Draft formal research proposal detailing AI methodology, clinical efficacy, and LMIC community health benefits.",
+      "Submit preliminary application through Wellcome Funding online management system.",
+      "If invited, submit full proposal with letters of support and budget justification."
+    ],
+    "snippet": "Wellcome Trust provides major multi-million pound research grants supporting computational and digital health innovations. Grants fund transformative AI diagnostics, epidemiological modeling, and health systems automation, with strong institutional prioritization for researchers in Africa and LMICs."
+  },
+
+  {
+    "featured": true,
+    "featured_rank": 19,
+    "tag": "data_science",
+    "category": "scholarship",
+    "title": "AIMS AI for Science Scholarship Programme",
+    "source": "African Institute for Mathematical Sciences (AIMS)",
+    "link": "https://nexteinstein.org",
+    "deadline": "Centre-specific deadlines (typically March 31 for August intake)",
+    "eligibility": "African STEM graduates with strong quantitative aptitude • Bachelor's degree in math, physics, biology, CS, or engineering • All African nationalities",
+    "benefits": "Full scholarship (tuition + living stipend) • Interdisciplinary research applying AI to biology, physics, cosmology, climate • AIMS pan-African network access",
+    "location": "AIMS Centres across Africa (South Africa, Rwanda, Ghana, Senegal, Cameroon)",
+    "amount": "Fully Funded (Tuition + Stipend)",
+    "degree_level": "Master's / Postgrad",
+    "country_focus": "Africa",
+    "application_steps": [
+      "Navigate to target AIMS centre admissions portal via nexteinstein.org.",
+      "Verify qualifying STEM Bachelor's degree with strong quantitative background.",
+      "Complete online application form with personal statement detailing interdisciplinary science interests.",
+      "Upload verified academic transcripts and curriculum vitae.",
+      "Submit contact details for 2–3 academic referees.",
+      "Submit complete package before the centre deadline (typically March 31)."
+    ],
+    "snippet": "The AIMS AI for Science Scholarship trains African mathematical and science graduates to leverage machine learning across physics, molecular biology, epidemiology, and climate science. Selected scholars receive full funding and conduct research alongside international faculty across AIMS centres."
+  },
+
+  {
+    "featured": true,
+    "featured_rank": 20,
+    "tag": "medicine",
+    "category": "grant",
+    "title": "Hanga SRH Innovation Program — Rwanda MINICT",
+    "source": "Rwanda Ministry of ICT & Innovation / VC4A",
+    "link": "https://vc4a.com/ministry-of-ict-innovation-minict/hanga-sexual-reproductive-health-srh-program/",
+    "deadline": "Cohort calls announced on VC4A (Cohort 2 concluded April 2026; next call upcoming)",
+    "eligibility": "Startups operating in any Sub-Saharan African country • Product addressing sexual & reproductive health • Youth- and female-led ventures actively encouraged",
+    "benefits": "$10,000 initial grant up to $30,000 for top performers • 2–3 month cohort curriculum • 6–9 months bespoke coaching • Investor & government health ministry networking",
+    "location": "Sub-Saharan Africa (Rwanda / East & West Africa)",
+    "amount": "$10,000 – $30,000 Grant Funding",
+    "degree_level": "All Levels / Startups",
+    "country_focus": "Sub-Saharan Africa",
+    "application_steps": [
+      "Confirm venture operates in Sub-Saharan Africa and provides a digital solution for sexual and reproductive health.",
+      "Review eligibility criteria on the active VC4A program listing.",
+      "Prepare company profile: problem statement, traction data, user numbers, and pitch deck.",
+      "Submit formal application via VC4A portal during the open window.",
+      "Participate in live selection pitch sessions with panel judges.",
+      "Selected startups complete 2–3 months of intensive business coaching and present at Investor Demo Day."
+    ],
+    "snippet": "Initiated by Rwanda's Ministry of ICT & Innovation, the Hanga SRH Innovation Program supports youth-led African technology ventures addressing maternal health, reproductive education, and clinical referrals. Ventures receive up to $30,000 in non-equity grant funding and dedicated government ministry integration."
+  },
+
+  {
+    "featured": true,
+    "featured_rank": 21,
+    "tag": "research",
+    "category": "scholarship",
+    "title": "Leon Levy Scholarships in Neuroscience (NYAS) — 2027 Cohort",
+    "source": "New York Academy of Sciences / Leon Levy Foundation",
+    "link": "https://www.nyas.org/shaping-science/fellowships/the-leon-levy-scholarships-in-neuroscience-llsn/",
+    "deadline": "Nomination opens Aug 21, 2026 • Applications close Oct 16, 2026 • Tenure starts Sept 1, 2027",
+    "eligibility": "Doctoral degree (PhD, MD, DVM) • ≤3 years cumulative postdoc experience • Full-time postdoc position at eligible NYC non-profit institution • J-1, H-1B, US citizen, PR eligible",
+    "benefits": "3-year award • Annual stipend at 125% of NIH postdoctoral rate • Fringe benefits • Up to $10,000/yr dependent-care supplement • 3-year NYAS membership",
+    "location": "New York City, NY, USA (Eligible NYC institutions)",
+    "amount": "125% NIH Postdoc Stipend + $10k/yr dependent care (3 years)",
+    "degree_level": "PhD / Postdoc",
+    "country_focus": "NYC Institution-based (Global applicants welcome)",
+    "application_steps": [
+      "Confirm you hold a PhD, MD, or equivalent and have ≤3 years of postdoctoral research experience.",
+      "Secure a postdoctoral position and research advisor support at an eligible New York City academic institution.",
+      "Attend the official NYAS informational webinar for prospective applicants and advisors.",
+      "Submit institutional nomination and complete application package (research proposal, CV, recommendation letters) by Oct 16, 2026.",
+      "Undergo scientific peer review by the Leon Levy Advisory Board.",
+      "Up to 10 Scholars are awarded 3-year tenure starting September 1, 2027."
+    ],
+    "snippet": "The Leon Levy Scholarships in Neuroscience support exceptional early-career postdoctoral researchers at non-profit research institutions across New York City. The 3-year award provides a generous stipend at 125% of the NIH postdoctoral rate, dependent care allowances, and annual NYAS symposium presentations."
+  },
+
+  {
+    "featured": true,
+    "featured_rank": 22,
+    "tag": "data_science",
+    "category": "scholarship",
+    "title": "Cambridge ERA:AI Fellowship — Winter 2027 Cohort",
+    "source": "Effective Research Alliance / University of Cambridge",
+    "link": "https://erafellowship.org/fellowship",
+    "deadline": "Winter 2027 deadline: September 13, 2026 (Open Now! Jan 18 – Mar 26, 2027 tenure)",
+    "eligibility": "Age 18+ globally • Open to PhD students, early-career researchers, professionals in tech/policy/economics/security, career changers • Talent-first: no strict academic degree required",
+    "benefits": "Fully funded 8–10 week Cambridge residency • Salary (~£34,125/yr pro-rated equivalent) • Free accommodation & meals • Visa support & travel costs covered • Mentorship & potential 6+ month extension",
+    "location": "University of Cambridge, Cambridge, UK",
+    "amount": "Fully Funded (Salary + Housing + Travel + Visa Support)",
+    "degree_level": "All Levels / PhD / Early-Career",
+    "country_focus": "Global (Visa Support Provided)",
+    "application_steps": [
+      "Review the 3 research tracks: Technical AI Safety, AI Governance, and Technical AI Governance.",
+      "Complete Stage 1 written application (~2 hours on erafellowship.org) before September 13, 2026.",
+      "Articulate a clear theory of change explaining how your research mitigates catastrophic AI risks.",
+      "Provide names and contact details for 2 references.",
+      "Ensure passport validity for UK visa processing and confirm full in-person availability in Cambridge (Jan 18 – Mar 26, 2027).",
+      "Complete two rounds of remote interviews with Cambridge researchers if shortlisted."
+    ],
+    "snippet": "The Cambridge ERA:AI Fellowship is a fully funded 10-week in-person research residency at the University of Cambridge focused on mitigating existential risks from advanced AI systems. Fellows receive salary compensation, free housing, meals, travel, and UK visa sponsorship with opportunities to publish high-impact working papers."
+  },
+
+  {
+    "featured": true,
+    "featured_rank": 23,
+    "tag": "research",
+    "category": "scholarship",
+    "title": "Swiss NCCR LIVES Doctoral Programme & Bavarian Research Fellowships",
+    "source": "NCCR LIVES / Universities of Lausanne & Geneva / Bavarian Research Alliance",
+    "link": "https://www.lives-nccr.ch/en",
+    "deadline": "Annual doctoral intake cycles (check NCCR LIVES portal)",
+    "eligibility": "Doctoral candidates & early-career researchers in life course research, quantitative social sciences, vulnerability, inequality, public health • International applicants eligible",
+    "benefits": "Structured Swiss/European doctoral training • Research stipend • Conference presentation travel funds • Peer-reviewed publication support",
+    "location": "Switzerland (Lausanne / Geneva) & Germany (Bavaria)",
+    "amount": "Doctoral Salary / Research Fellowship",
+    "degree_level": "PhD / Postdoc",
+    "country_focus": "Europe / Global",
+    "application_steps": [
+      "Identify target faculty supervisor and research institute at partner universities (Lausanne, Geneva, or Bavarian institutions).",
+      "Prepare research proposal addressing life course vulnerability, socioeconomic inequality, or quantitative public health.",
+      "Gather certified university transcripts, curriculum vitae, and 2 academic letters of recommendation.",
+      "Submit application via university graduate school admissions portal.",
+      "Complete interview and presentation with the doctoral selection committee."
+    ],
+    "snippet": "The Swiss NCCR LIVES Doctoral Programme provides structured European doctoral training in life course research, inequality, and quantitative social science at the Universities of Lausanne and Geneva. In collaboration with European research networks, candidates receive full research appointments and international conference funding."
+  },
+
+  {
+    "featured": true,
+    "featured_rank": 24,
+    "tag": "research",
+    "category": "scholarship",
+    "title": "UBC Four-Year Doctoral Fellowship (4YF) & Mastercard Foundation Scholars",
+    "source": "University of British Columbia",
+    "link": "https://mcfscholars.ubc.ca",
+    "deadline": "Mastercard Scholars 2027: EOI opens Aug 31, 2026; closes ~Sept 6, 2026 • 4YF: automatic during PhD admission",
+    "eligibility": "4YF: All admitted UBC PhD students • Mastercard Scholars: Sub-Saharan African citizens ≤35 years applying to eligible UBC Master's programs (Land & Food Systems, Forestry, Science) with commitment to return to Africa",
+    "benefits": "4YF: $18,200–$24,000/yr + full tuition (4 years) • Mastercard Scholars: 100% full tuition, living stipend, housing, flights, laptop, study materials, Social Entrepreneurship Fund",
+    "location": "University of British Columbia, Vancouver, Canada",
+    "amount": "Fully Funded (Tuition + Full Living Stipend + Travel)",
+    "degree_level": "Master's / PhD",
+    "country_focus": "Sub-Saharan Africa Priority / Global",
+    "application_steps": [
+      "Confirm eligibility: Sub-Saharan African citizenship, age ≤35, applying to eligible UBC Master's faculty.",
+      "Submit Expression of Interest (EOI) at mcfscholars.ubc.ca between August 31 and September 6, 2026.",
+      "If invited, submit full Mastercard Scholars application package (CV, transcripts, 2 reference letters on letterhead) by Sept 30, 2026.",
+      "Complete formal application to your chosen UBC Faculty by November 2026.",
+      "PhD applicants: submit regular UBC Graduate Studies doctoral application for automatic 4YF funding consideration ($18,200–$24,000/yr + tuition)."
+    ],
+    "snippet": "The University of British Columbia offers the Four-Year Doctoral Fellowship (4YF) covering full tuition plus living stipends for top PhD scholars, and the Mastercard Foundation Scholars Program providing comprehensive full funding for African graduate students in forestry, science, and food systems committed to driving impact in Africa."
+  },
+
+  {
+    "featured": true,
+    "featured_rank": 25,
+    "tag": "data_science",
+    "category": "scholarship",
+    "title": "Anthropic Fellows Program — AI Safety Research (Work Authorization Required)",
+    "source": "Anthropic",
+    "link": "https://alignment.anthropic.com/2025/anthropic-fellows-program-2026/",
+    "deadline": "4-month paid cohorts (Applications reviewed periodically on Greenhouse/Constellation)",
+    "eligibility": "⚠️ HARD REQUIREMENT: Must already possess valid work authorization in the US, UK, or Canada (Anthropic does NOT sponsor visas) • Strong Python coding and ability to execute AI safety research • No formal degree required",
+    "benefits": "Stipend of $3,850 USD / £2,310 GBP / $4,300 CAD per week ($61,600 total) • ~$15k/month compute funding • Direct 1-on-1 mentorship from Anthropic researchers • 40%+ conversion to full-time roles",
+    "location": "San Francisco, USA / London, UK / Remote within US/UK/CA authorized locations",
+    "amount": "$3,850/week ($61,600 USD per 4-month cohort)",
+    "degree_level": "All Levels / Research",
+    "country_focus": "US, UK, or Canada Work-Authorized Only",
+    "application_steps": [
+      "⚠️ STOP: Verify you already hold valid work authorization in the US, UK, or Canada (Anthropic does not sponsor visas for this fellowship).",
+      "Review core research streams: Mechanistic Interpretability, Scalable Oversight, Alignment Theory, Frontier Model Security.",
+      "Prepare statement of motivation, CV, and links to public machine learning code or safety research.",
+      "Provide 3 references who can vouch for your technical research ability.",
+      "Submit application via Anthropic / Constellation portal before cohort review deadline.",
+      "Complete coding assessment and technical interviews with Anthropic research scientists."
+    ],
+    "snippet": "The Anthropic Fellows Program is an intensive 4-month paid research fellowship in AI safety and frontier model governance. Fellows receive $3,850/week ($61,600 total), compute access, and direct mentorship from Anthropic scientists. Note: strictly requires existing work authorization in the US, UK, or Canada (no visa sponsorship)."
+  },
+
+  // ── GENERAL LOCAL & CONTINENTAL OPPORTUNITIES ───────────────────────────
   // ── TECHNOLOGY ──────────────────────────────────────────────────────────────
   { tag:'technology', category:'scholarship', title:'Google Africa Developer Scholarship 2026', source:'Google Developers Africa', link:'https://developers.google.com/africa/scholarships', deadline:'April 30, 2026', eligibility:'African national or resident • Age 18+ • Basic programming knowledge', benefits:'Free premium courses • Google certification • Mentorship • Job placement support', location:'Online', snippet:'Google offers 50,000 scholarships for African developers in Android, web and cloud. Cameroon applicants eligible. Fully covers certification costs and training materials.' },
   { tag:'technology', category:'internship',  title:'Microsoft Africa Development Centre Internship 2026', source:'Microsoft Careers', link:'https://careers.microsoft.com/africa', deadline:'August 31, 2026', eligibility:'Final-year student or recent graduate • CS or engineering degree • GPA 3.0+', benefits:'Competitive stipend • Housing allowance • Mentorship • Certificate • Return offer potential', location:'Nairobi / Remote', snippet:'Microsoft ADC is hiring software engineering interns across Africa. 3-month paid placement with real project ownership and senior mentorship.' },
@@ -141,661 +794,6 @@ export const OPPORTUNITIES = [
   { tag:'research', category:'competition', title:'L\'Oréal-UNESCO For Women in Science 2026 – Africa', source:'L\'Oréal Foundation', link:'https://forwomeninscience.com/africa', deadline:'June 2026', eligibility:'African women scientists • PhD • Under 40', benefits:'€15,000 fellowship • Global platform • Mentorship', location:'Pan-Africa', snippet:'L\'Oréal-UNESCO For Women in Science fellowships for African women researchers. €15,000 fellowship and global platform for outstanding science.' },
   { tag:'research', category:'internship',  title:'Research Intern – CIRCB Cameroon 2026', source:'CIRCB', link:'https://circb.cm/internships', deadline:null, eligibility:'Biomedical science student • Any level • Cameroonian', benefits:'Lab experience • Mentorship • Publication opportunity', location:'Yaoundé, Cameroon', snippet:'Chantal Biya International Reference Centre for HIV/AIDS research internships. Hands-on biomedical research experience in world-class facility.' },
   { tag:'research', category:'scholarship', title:'DAAD Research Scholarship – Africa 2026', source:'DAAD Germany', link:'https://daad.de/research-africa', deadline:'October 2026', eligibility:'African researchers • Master\'s minimum • Any discipline', benefits:'Full scholarship • Monthly stipend • Research support • Travel', location:'Germany', snippet:'DAAD research scholarships for African researchers to conduct studies at German universities and research institutes. All disciplines welcome.' },
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // ── FEATURED 25: VERIFIED GLOBAL OPPORTUNITIES ───────────────────────────
-  // ═══════════════════════════════════════════════════════════════════════════
-
-  // ── 1. TECHNOVATION GIRLS ────────────────────────────────────────────────
-  {
-    tag: 'technology',
-    category: 'competition',
-    title: 'Technovation Girls Global Challenge 2026–2027',
-    source: 'Technovation Girls',
-    link: 'https://technovationchallenge.org',
-    deadline: 'New season opens mid-August 2026 • Submissions close March–May 2027',
-    eligibility: 'Female and non-binary students aged 8–18 globally • Teams of 1–5 participants • No prior coding experience required • Open to all countries',
-    benefits: 'Global Pitch at the World Summit • International scholarships for top teams • Project showcase on Technovation\'s global platform • Judging by tech industry professionals • Free to participate — zero cost',
-    location: 'Online (Global) + World Summit Finale',
-    amount: 'Free / Scholarships for winners',
-    degree_level: 'High School',
-    country_focus: 'Global',
-    application_steps: [
-      '1. Register a free team account at https://technovationchallenge.org starting mid-August 2026.',
-      '2. Form a team of 1–5 girls/non-binary students aged 8–18 and find an adult mentor (recommended).',
-      '3. Identify a real community problem and design an AI-powered mobile app solution.',
-      '4. Build your app using MIT App Inventor or another approved platform during the program season.',
-      '5. Create a business plan and pitch video to accompany your submission.',
-      '6. Submit your complete project (app + business plan + pitch video) by the May 2027 deadline.',
-      '7. Top teams are invited to pitch live at the World Summit for scholarships and international recognition.'
-    ],
-    snippet: 'Technovation Girls challenges girls and non-binary youth aged 8–18 worldwide to build AI-powered mobile apps and business plans addressing real community problems — from climate change to healthcare access. Running since 2010, the program has engaged over 500,000 students across 100+ countries. Teams are mentored by industry professionals, submit a working app and business plan, and top performers pitch live at the annual World Summit for international scholarships. Completely free to join — new season opens mid-August 2026.',
-  },
-
-  // ── 2. THE CONRAD CHALLENGE ──────────────────────────────────────────────
-  {
-    tag: 'entrepreneurship',
-    category: 'competition',
-    title: 'The Conrad Challenge 2026–2027',
-    source: 'Conrad Foundation',
-    link: 'https://conradchallenge.org',
-    deadline: 'Stage 1 Activation: October 30, 2026 • Stage 2 Innovation: January 8, 2027 • Innovation Summit: April 2027',
-    eligibility: 'Global students aged 13–18 • Teams of 2–5 with a required adult coach aged 18+ • Five innovation tracks: Aerospace & Aviation, Cyber-Technology & Security, Energy & Environment, Health & Nutrition, Sustainable Development',
-    benefits: 'Innovation Summit at Space Center Houston • University scholarships up to $25,000/year for top teams • Live pitching to venture capitalists and judges • Incubation support • Global media coverage',
-    location: 'Online (submissions) + Space Center Houston, Texas, USA (Summit)',
-    amount: '$25,000/year scholarships',
-    degree_level: 'High School',
-    country_focus: 'Global',
-    application_steps: [
-      '1. Register your team at https://conradchallenge.org by October 30, 2026 (Stage 1 — free).',
-      '2. Select one of five innovation tracks: Aerospace & Aviation, Cyber-Technology & Security, Energy & Environment, Health & Nutrition, or Sustainable Development.',
-      '3. Recruit team members (2–5 students aged 13–18) and one required adult coach (18+).',
-      '4. Develop your innovation prototype and Lean Canvas business model during Stage 1.',
-      '5. Submit your Stage 2 Innovation package (prototype, business plan, pitch deck) by January 8, 2027. Stage 2 submission fee: $499.',
-      '6. Shortlisted teams are invited to the Innovation Summit at Space Center Houston in April 2027 to pitch live before venture judges.',
-      '7. Grand prize winners receive university scholarships worth up to $25,000/year.'
-    ],
-    snippet: 'The Conrad Challenge tasks student teams aged 13–18 with solving real-world problems using science, technology, and entrepreneurship principles. Named after NASA astronaut Pete Conrad, the program has connected youth innovators with venture capitalists, NASA scientists, and university admissions boards since 2008. Teams select from five innovation tracks, build functional prototypes with viable business models, and pitch live at Space Center Houston. Stage 1 registration is free; Stage 2 submission is $499 (institutional sponsorships available). University scholarships worth up to $25,000/year are awarded to top teams.',
-  },
-
-  // ── 3. THE JUNIOR ACADEMY (NYAS) ─────────────────────────────────────────
-  {
-    tag: 'stem',
-    category: 'event',
-    title: 'The Junior Academy – NYAS Global STEM Alliance 2027',
-    source: 'New York Academy of Sciences',
-    link: 'https://www.nyas.org/programs/global-stem-alliance/the-junior-academy',
-    deadline: 'Applications for the next cycle open April 2027 • Previous cycle closed July 9, 2026',
-    eligibility: 'Students aged 13–17 globally • English proficiency required • Strong interest in STEM • Commitment to complete the full challenge semester required',
-    benefits: 'Virtual project presentation on the NYAS Launchpad global portal • International networking with expert mentors from leading research institutions • Peer-reviewed collaborative research experience • Certificate of completion • Free to participate',
-    location: 'Online (Global) — 100+ countries represented',
-    amount: 'Free',
-    degree_level: 'High School',
-    country_focus: 'Global',
-    application_steps: [
-      '1. Monitor https://www.nyas.org/programs/global-stem-alliance/the-junior-academy for application opening (April 2027).',
-      '2. Complete the online application demonstrating your STEM interests and English proficiency.',
-      '3. If selected, you will be placed in a cross-border virtual team with students from different countries.',
-      '4. Collaborate on an assigned real-world challenge (e.g., green energy, public health, food security) over the challenge semester.',
-      '5. Produce a research methodology, data analysis, and human-centered design solution with your team.',
-      '6. Present your project virtually on the NYAS Launchpad portal for evaluation by expert mentors.',
-      '7. Receive feedback, certification, and access to the global NYAS alumni network.'
-    ],
-    snippet: 'The Junior Academy is the New York Academy of Sciences\' flagship global STEM initiative for students aged 13–17 from over 100 countries. Selected participants are placed in cross-border virtual teams to collaborate on real-world scientific challenges spanning green energy, public health misinformation, food security, and more. Under expert mentorship from researchers at institutions like MIT, Harvard, and Google, teams apply scientific research methodology, data analysis, and human-centered design. Projects are showcased internationally on the NYAS Launchpad portal. Applications for the next cycle open April 2027.',
-  },
-
-  // ── 4. HARVARD INTERNATIONAL REVIEW ACADEMIC WRITING CONTEST ─────────────
-  {
-    tag: 'international_relations',
-    category: 'competition',
-    title: 'Harvard International Review Academic Writing Contest — Fall/Winter 2026–2027',
-    source: 'Harvard International Review',
-    link: 'https://hir.harvard.edu/writing-contest',
-    deadline: 'Fall/Winter cycle deadline: January 2, 2027 • Main global cycle previously: August 24, 2026',
-    eligibility: 'High school and middle school students globally (grades 7–12) • Analytical articles of 800–1,200 words • Topics include: Security in a Multipolar World, Technology Innovation and Power, Climate Geopolitics, Economic Interdependence',
-    benefits: 'Publication opportunities in the Harvard International Review — one of the world\'s most prestigious student policy journals • Gold, Silver, and Bronze medal recognition • Virtual oral defense before the HIR editorial board • Free to enter',
-    location: 'Online (Global)',
-    amount: 'Free',
-    degree_level: 'High School',
-    country_focus: 'Global',
-    application_steps: [
-      '1. Visit https://hir.harvard.edu/writing-contest to view the current cycle prompts and submission portal.',
-      '2. Select an analytical prompt (e.g., Security in a Multipolar World, Technology, Innovation, and Power).',
-      '3. Write an analytical article of 800–1,200 words addressing your chosen prompt with evidence-based argumentation.',
-      '4. Ensure proper citations (Chicago or APA style), original analysis, and structured argumentation.',
-      '5. Submit via the online portal before the January 2, 2027 deadline (Fall/Winter cycle).',
-      '6. Shortlisted candidates will be invited for a virtual oral defense before the HIR editorial board.',
-      '7. Award notifications (Gold, Silver, Bronze) and publication decisions are communicated after evaluation.'
-    ],
-    snippet: 'The Harvard International Review Academic Writing Contest invites global students in grades 7–12 to submit 800–1,200 word analytical articles on international affairs, foreign policy, and geopolitical topics. The Fall/Winter 2026–2027 cycle deadline is January 2, 2027. Prompts explore themes like Security in a Multipolar World, Technology, Innovation, and Power, and Climate Geopolitics. Exceptional submissions earn Gold, Silver, or Bronze medal recognition and publication opportunities in the Harvard International Review — founded in 1979 and read by policymakers and scholars worldwide. Finalists participate in a virtual oral defense before the HIR editorial board.',
-  },
-
-  // ── 5. MIT WOMEN'S TECHNOLOGY PROGRAM ────────────────────────────────────
-  {
-    tag: 'technology',
-    category: 'scholarship',
-    title: 'MIT Women\'s Technology Program (WTP) 2027',
-    source: 'MIT School of Engineering',
-    link: 'https://engineering.mit.edu/programs/women-technology-program-wtp',
-    deadline: 'Applications typically open December 2026 – February 2027 for the summer 2027 cohort',
-    eligibility: 'Rising female high school seniors (entering 12th grade in Fall 2027) • US residents preferred; limited international spots • Strong math and science background (pre-calculus or higher) • Minimal prior engineering experience intentionally required',
-    benefits: 'Fully funded — zero tuition cost • Four-week residential program on MIT campus • Direct instruction by MIT faculty and graduate student mentors • Hands-on laboratory projects in Mechanical Engineering or EECS • Strong pathway for university admissions recognition',
-    location: 'MIT Campus, Cambridge, Massachusetts, USA',
-    amount: 'Fully Funded',
-    degree_level: 'High School',
-    country_focus: 'Global',
-    application_steps: [
-      '1. Visit https://engineering.mit.edu/programs/women-technology-program-wtp beginning December 2026.',
-      '2. Choose your track: Mechanical Engineering (ME) or Electrical Engineering and Computer Science (EECS).',
-      '3. Prepare your application: academic transcripts, teacher recommendations, and personal essays.',
-      '4. Submit the online application by the February 2027 deadline.',
-      '5. Notification of admission typically arrives March–April 2027.',
-      '6. Attend the four-week residential program on MIT campus in June–July 2027.',
-      '7. Complete laboratory research projects mentored by MIT graduate students and faculty.'
-    ],
-    snippet: 'The MIT Women\'s Technology Program (WTP) is a fully funded four-week residential summer program on MIT\'s campus designed specifically for rising female seniors who have strong math and science backgrounds but minimal prior engineering experience. Running since 1998, WTP gives participants hands-on laboratory research in either Mechanical Engineering or Electrical Engineering & Computer Science, mentored by MIT graduate scholars and faculty. The program has launched hundreds of engineering careers. Applications open December 2026 — February 2027 for the summer 2027 cohort. Zero cost to participants.',
-  },
-
-  // ── 6. AFRICAN LEADERSHIP ACADEMY ────────────────────────────────────────
-  {
-    tag: 'leadership',
-    category: 'scholarship',
-    title: 'African Leadership Academy (ALA) — Class of 2027 Diploma Program',
-    source: 'African Leadership Academy',
-    link: 'https://www.africanleadershipacademy.org/admissions',
-    deadline: 'Early Decision: October 15, 2026 • Regular Decision: January 15, 2027',
-    eligibility: 'African nationals born on or after September 1, 2007 (ages 15–18 at application) • Minimum Grade 10 (Form 4) completion • Demonstrated leadership, perseverance, entrepreneurial thinking, and intellectual courage • All African nationalities and backgrounds considered',
-    benefits: 'Two-year fully residential pre-university diploma program in Johannesburg, South Africa • Full scholarships and need-based financial aid — 95–97% of admitted students receive aid • ALA graduates have collectively generated over $270M in university scholarships • Access to a lifelong pan-African alumni network spanning 60+ countries • Direct pathways to world\'s top universities including Ivy League, Oxford, Cambridge',
-    location: 'Johannesburg, South Africa (fully residential)',
-    amount: 'Full Scholarship / Need-Based Aid',
-    degree_level: 'High School',
-    country_focus: 'Africa',
-    application_steps: [
-      '1. Visit https://www.africanleadershipacademy.org/admissions and create an account on the ALA application portal.',
-      '2. Complete the written application: personal essays (intellectual readiness, leadership, community impact), academic records.',
-      '3. Obtain two teacher/mentor recommendation letters addressing ALA\'s five leadership competencies: Courage, Perseverance, Ownership, Intellectual Readiness, Interdependence.',
-      '4. Submit your Early Decision application by October 15, 2026 or Regular Decision by January 15, 2027.',
-      '5. Shortlisted candidates are invited to regional assessment centres or virtual interviews.',
-      '6. Apply for financial aid simultaneously — 95–97% of admitted students receive need-based support.',
-      '7. Admitted students begin the two-year residential programme in Johannesburg, South Africa in 2027.'
-    ],
-    snippet: 'The African Leadership Academy (ALA) is a prestigious two-year pre-university diploma program in Johannesburg, South Africa that has transformed African leadership pipelines since 2008. ALA\'s holistic evaluation focuses on five leadership competencies: Intellectual Readiness, Courage, Perseverance, Ownership, and Interdependence — not just grades. Graduates of the Class of 2027 program will join an alumni network spanning 60+ African nations, with a proven track record of over $270 million in collective university scholarship generation. Early Decision deadline: October 15, 2026. Regular Decision: January 15, 2027. 95–97% of admitted students receive need-based financial aid.',
-  },
-
-  // ── 7. YALE YOUNG AFRICAN SCHOLARS (YYAS) ────────────────────────────────
-  {
-    tag: 'leadership',
-    category: 'scholarship',
-    title: 'Yale Young African Scholars (YYAS) Programme 2027',
-    source: 'Yale Young African Scholars',
-    link: 'https://yyas.yale.edu',
-    deadline: 'Application deadline: January 21, 2027 • Residential sessions: June–July 2027',
-    eligibility: 'Secondary school students across Africa (typically ages 16–18) • Strong academic record and demonstrated community leadership • Open to students from all African nations',
-    benefits: 'Fully funded — covers tuition, accommodation, and international travel costs • Capstone project presentations before Yale faculty • Inclusion in Yale\'s global alumni network • Structured university application mentorship and guidance • Access to the Yale Young Global Scholars (YYGS) ecosystem',
-    location: 'Yale University, New Haven, Connecticut, USA + Regional African hubs',
-    amount: 'Fully Funded (tuition + travel)',
-    degree_level: 'High School',
-    country_focus: 'Africa',
-    application_steps: [
-      '1. Visit https://yyas.yale.edu and complete the online application form.',
-      '2. Prepare your application essay addressing your academic interests, leadership experience, and vision for Africa.',
-      '3. Collect two academic recommendation letters from teachers or mentors.',
-      '4. Submit your complete application by January 21, 2027.',
-      '5. Selected candidates are notified and invited to attend the June–July 2027 residential session.',
-      '6. Travel costs and program fees are fully covered — no financial barrier to participation.',
-      '7. Complete a capstone research project and present before Yale faculty at the end of the program.'
-    ],
-    snippet: 'Yale Young African Scholars (YYAS) is a flagship academic enrichment and university preparation program for exceptional secondary school students across Africa. Fully funded — covering tuition, accommodation, and international travel — YYAS runs week-long residential sessions at Yale University combining university-level research, leadership strategy, standardized test literacy, and civic engagement. The program is part of the Yale Young Global Scholars (YYGS) ecosystem, connecting African youth directly to Yale\'s global alumni network and structured university application mentorship. Application deadline: January 21, 2027.',
-  },
-
-  // ── 8. GEORGETOWN UNIVERSITY INTERNATIONAL RELATIONS ACADEMY ─────────────
-  {
-    tag: 'international_relations',
-    category: 'event',
-    title: 'Georgetown University International Relations Academy 2027',
-    source: 'Georgetown University School of Continuing Studies',
-    link: 'https://scs.georgetown.edu/programs/professional-development/international-relations-academy',
-    deadline: 'Application deadline: May 15, 2027 • Program dates: Summer 2027 (1 week)',
-    eligibility: 'High school students globally in grades 8–12 • Strong interest in foreign policy, diplomacy, and international affairs • Residential and commuter options available',
-    benefits: 'Immersive foreign policy simulation and crisis negotiation workshops • Direct engagement with active Washington D.C. diplomats and Georgetown University faculty • Certificate of completion from Georgetown • Residential or commuter attendance • Need-based financial aid available (tuition: $3,095–$3,725)',
-    location: 'Georgetown University, Washington D.C., USA',
-    amount: '$3,095–$3,725 (financial aid available)',
-    degree_level: 'High School',
-    country_focus: 'Global',
-    application_steps: [
-      '1. Visit https://scs.georgetown.edu/programs/professional-development/international-relations-academy for current application details.',
-      '2. Complete the online application including academic information, personal statement, and teacher recommendation.',
-      '3. Apply for need-based financial aid simultaneously if required.',
-      '4. Submit your application by May 15, 2027.',
-      '5. Receive admission notification and choose between residential (on-campus) or commuter attendance.',
-      '6. Attend the one-week summer program at Georgetown University in Washington D.C.',
-      '7. Participate in policy simulations, diplomat sessions, and crisis negotiations. Receive your Georgetown certificate.'
-    ],
-    snippet: 'Georgetown University\'s International Relations Academy is a one-week residential summer program in Washington D.C. giving high school students (grades 8–12) direct exposure to real-world foreign policy and international diplomacy. Participants engage in crisis negotiation simulations, policy formulation workshops, bilateral and multilateral diplomacy exercises, and sessions with active Washington D.C. diplomats and Georgetown University faculty. Both residential and commuter options are available, with need-based financial aid offered for students who qualify. Tuition ranges from $3,095 to $3,725. Application deadline: May 15, 2027.',
-  },
-
-  // ── 9. FAST FORWARD ACCELERATOR ──────────────────────────────────────────
-  {
-    tag: 'entrepreneurship',
-    category: 'grant',
-    title: 'Fast Forward Tech Nonprofit Accelerator — 2027 Cohort',
-    source: 'Fast Forward',
-    link: 'https://www.ffwd.org/accelerator',
-    deadline: 'Annual recruitment cycle for 2027 cohort — rolling applications, check portal for current window',
-    eligibility: 'Early-stage tech nonprofits and youth-led social impact ventures globally • Technology must be the core service delivery mechanism (not peripheral) • Open to founders of any age or geography • Focus areas: open-source tools, public interest AI, civic technology, education, health, and human rights',
-    benefits: '$25,000+ in non-dilutive, equity-free seed funding • Strategic mentorship from Silicon Valley tech leaders • Entry to Fast Forward\'s global funder and philanthropic network • International pitch showcase • Media and PR exposure across the tech-for-good ecosystem',
-    location: 'Online (Global) + San Francisco, USA (flagship events)',
-    amount: '$25,000+ non-dilutive grant',
-    degree_level: 'All Levels',
-    country_focus: 'Global',
-    application_steps: [
-      '1. Visit https://www.ffwd.org/accelerator to check the current application window.',
-      '2. Confirm your venture is a registered nonprofit (501c3 or equivalent) with technology as its core mission.',
-      '3. Prepare your application: describe the technology product, the problem it solves, team background, and impact metrics.',
-      '4. Submit your application via the Fast Forward portal.',
-      '5. Selected applicants may be invited to a virtual interview with the Fast Forward team.',
-      '6. Accepted nonprofits receive $25,000+ in equity-free funding and join the accelerator cohort.',
-      '7. Participate in mentorship sessions, pitch events, and access the Fast Forward global philanthropic network.'
-    ],
-    snippet: 'Fast Forward is the leading accelerator for tech nonprofits — organizations that use technology as their primary means of creating social change. Since 2014, Fast Forward has invested in over 100 tech nonprofits including Code2040, DonorsChoose, and Crisis Text Line. The program provides $25,000+ in non-dilutive, equity-free seed funding alongside strategic mentorship from Silicon Valley leaders and access to a global network of philanthropists and funders. Any early-stage tech nonprofit globally — including AI-powered tools for civil society, education, health, and human rights — is eligible to apply.',
-  },
-
-  // ── 10. CITIZEN ENTREPRENEURSHIP COMPETITION ─────────────────────────────
-  {
-    tag: 'entrepreneurship',
-    category: 'competition',
-    title: 'Citizen Entrepreneurship Competition 2026',
-    source: 'Convetit / Citizen Entrepreneurship',
-    link: 'https://www.citizen-entrepreneurship.com',
-    deadline: 'Annual entry window — approximately June 2026 close date • Fully virtual • Entry is free',
-    eligibility: 'Youth category: individuals aged 15–35 worldwide • Open category: no age restriction • Submissions must align with one or more UN Sustainable Development Goals (SDGs) • Any country, any background',
-    benefits: 'International online gallery feature and global audience visibility • Global public voting platform driving community engagement • Official UN SDG recognition awards for winners • Mentorship connections and access to international entrepreneur networks • Free to enter',
-    location: 'Online (Global)',
-    amount: 'Free / SDG Recognition Awards',
-    degree_level: 'All Levels',
-    country_focus: 'Global',
-    application_steps: [
-      '1. Visit https://www.citizen-entrepreneurship.com and create a free account.',
-      '2. Register for the Youth category (ages 15–35) or Open category.',
-      '3. Develop your entrepreneurial idea aligned with at least one UN SDG (e.g., SDG 3 Good Health, SDG 4 Quality Education, SDG 13 Climate Action).',
-      '4. Submit your concept — typically includes a pitch description, impact statement, and optional supporting materials.',
-      '5. Your submission is featured in the international online gallery for public voting.',
-      '6. Finalists are evaluated by expert judges and recognized with official UN SDG awards.',
-      '7. Winners receive international recognition, mentorship connections, and media exposure.'
-    ],
-    snippet: 'The Citizen Entrepreneurship Competition is a fully virtual, globally accessible competition for entrepreneurs of all ages — with a dedicated youth track for ages 15–35. Participants submit SDG-aligned entrepreneurial ideas and are featured in an international online gallery for global public voting and expert judging. Winners receive official UN SDG recognition awards and mentorship connections to international entrepreneur networks. Completely free to enter, with no geographic restrictions — making it one of the most accessible global entrepreneurship competitions available.',
-  },
-
-  // ── 11. ZINDI AI COMPETITIONS PLATFORM ───────────────────────────────────
-  {
-    tag: 'data_science',
-    category: 'competition',
-    title: 'Zindi Africa AI Competitions Platform — Ongoing 2026',
-    source: 'Zindi Africa',
-    link: 'https://zindi.africa',
-    deadline: 'Rolling — new live challenges launch continuously throughout the year • Free to register and compete',
-    eligibility: 'Data scientists, ML engineers, developers, and students globally • All skill levels welcome from beginner to expert • Strong focus on African data contexts and development challenges • No formal degree required',
-    benefits: 'Public leaderboards visible to 70,000+ practitioner community • Cash prize purses per competition (ranging from $500 to $30,000+) • Verifiable ranked profile for enterprise recruitment • Open-source portfolio building • Direct talent discovery by African and international companies',
-    location: 'Online (Global)',
-    amount: '$500–$30,000+ per competition',
-    degree_level: 'All Levels',
-    country_focus: 'Africa / Global',
-    application_steps: [
-      '1. Register a free account at https://zindi.africa.',
-      '2. Browse active competitions in your area of interest (agriculture, health, NLP, finance, climate).',
-      '3. Download the training dataset and read the competition rules and evaluation metric.',
-      '4. Build and iterate on your predictive model using Python, R, or your preferred ML framework.',
-      '5. Submit predictions via the Zindi platform and view your leaderboard ranking.',
-      '6. Refine your model, resubmit, and collaborate with or learn from the community.',
-      '7. Top-ranked participants at competition close receive cash prizes and verified public recognition on their Zindi profile.'
-    ],
-    snippet: 'Zindi is Africa\'s leading competitive data science platform, hosting over 70,000 practitioners from across the globe on challenges built around real-world African datasets. Live competitions span agriculture (crop yield prediction), healthcare (disease detection), finance (credit scoring), NLP (multilingual models for African languages), and climate science. Cash prizes range from $500 to $30,000+ per competition. Zindi profile rankings serve as internationally recognized credentials used by companies like Google, Microsoft, and MTN to identify top talent. Free to register — new challenges launch year-round.',
-  },
-
-  // ── 12. DATA SCIENCE AFRICA SUMMER SCHOOL ────────────────────────────────
-  {
-    tag: 'data_science',
-    category: 'event',
-    title: 'Data Science Africa (DSA) Summer School 2026',
-    source: 'Data Science Africa',
-    link: 'https://www.datascienceafrica.org',
-    deadline: '2026 cohort applications: April 2026 (rolling selection) • Check portal for next cycle announcement',
-    eligibility: 'Students, researchers, and technical professionals across Africa • Basic programming (Python preferred) and mathematics knowledge beneficial • Virtual and in-person hybrid access available • No strict degree requirement for all tracks',
-    benefits: 'Intensive training in ML fundamentals, statistical computing, IoT data pipelines, and edge AI • Academic workshop poster sessions and peer-reviewed project demonstrations • Networking with international ML researchers from Google Brain, DeepMind, and top African universities • Hybrid/virtual access for continental participation • Partially or fully subsidized fees for African participants',
-    location: 'Hybrid — virtual + various African host institutions (Kenya, Uganda, Rwanda, Nigeria)',
-    amount: 'Subsidized / Free for qualifying participants',
-    degree_level: 'Undergraduate / Master\'s / All Levels',
-    country_focus: 'Africa',
-    application_steps: [
-      '1. Monitor https://www.datascienceafrica.org for the next cycle\'s call for applications.',
-      '2. Submit your application including academic/professional background, motivation letter, and coding experience.',
-      '3. Shortlisted applicants receive invitations for virtual or in-person attendance.',
-      '4. Prepare a project proposal if you plan to present a poster at the academic workshop.',
-      '5. Attend the summer school — covering ML fundamentals, statistical computing, IoT pipelines, and edge AI deployment.',
-      '6. Present your work at the academic workshop for peer review and expert feedback.',
-      '7. Engage with the DSA community to build lasting collaborations with African and international ML researchers.'
-    ],
-    snippet: 'Data Science Africa (DSA) is the continent\'s premier community-driven initiative for machine learning and data science education. The annual Summer School delivers intensive hands-on training in ML fundamentals, statistical computing, IoT data pipelines, and edge AI deployment. Past events have hosted instructors from Google Brain, DeepMind, Makerere University, and Carnegie Mellon Africa. Participants from over 30 African countries showcase field-deployed ML models at academic workshops and network with world-class researchers. Hybrid and virtual access options ensure participation across the continent. Applications for each annual cohort open in April.',
-  },
-
-  // ── 13. AFRICAN MASTER'S IN MACHINE INTELLIGENCE (AIMS AMMI) ─────────────
-  {
-    tag: 'data_science',
-    category: 'scholarship',
-    title: 'African Master\'s in Machine Intelligence (AMMI) — AIMS 2026',
-    source: 'African Institute for Mathematical Sciences (AIMS)',
-    link: 'https://aimsammi.org',
-    deadline: 'Applications reviewed on a rolling basis — check https://aimsammi.org for the current annual cohort deadline',
-    eligibility: 'STEM graduates with strong mathematical foundations and programming proficiency across Africa • Bachelor\'s degree in mathematics, physics, computer science, engineering, or related field required • All African nationalities welcome',
-    benefits: 'Fully funded scholarships — covers full tuition and living stipend • Intensive 1-year Master\'s program in deep learning, reinforcement learning, generative models, and AI ethics • Thesis presented to international visiting faculty including researchers from Google DeepMind, Meta AI, and leading global labs • Paper publication support in top AI venues (NeurIPS, ICML, ICLR)',
-    location: 'AIMS Centres across Africa — Rwanda (Kigali), Ghana, Senegal, South Africa, Cameroon',
-    amount: 'Fully Funded (tuition + living stipend)',
-    degree_level: 'Master\'s',
-    country_focus: 'Africa',
-    application_steps: [
-      '1. Visit https://aimsammi.org and review the current cohort application requirements.',
-      '2. Confirm eligibility: Bachelor\'s degree in a STEM field with strong mathematics and programming skills.',
-      '3. Prepare your application: academic transcripts, CV/resume, two recommendation letters, statement of purpose.',
-      '4. Submit your online application before the current cohort deadline.',
-      '5. Shortlisted candidates may be invited for a technical interview or assessment.',
-      '6. Admitted students receive a fully funded scholarship package covering tuition and living costs.',
-      '7. Complete the intensive 1-year program and defend your thesis before visiting international faculty.'
-    ],
-    snippet: 'The African Master\'s in Machine Intelligence (AMMI) is a fully funded 1-year Master\'s program delivered across the African Institute for Mathematical Sciences (AIMS) network in Rwanda, Ghana, Senegal, South Africa, and Cameroon. The rigorous curriculum covers deep learning theory, reinforcement learning, generative models, mathematical optimization, and AI ethics — taught and mentored by world-class visiting faculty from Google DeepMind, Meta AI, Mila, and top global research labs. All African STEM graduates with strong mathematics backgrounds are eligible. Fully funded with tuition and living stipend. Applications are reviewed on a rolling annual basis.',
-  },
-
-  // ── 14. UN GLOBAL PULSE AI INNOVATION CHALLENGES ─────────────────────────
-  {
-    tag: 'data_science',
-    category: 'competition',
-    title: 'UN Global Pulse AI Innovation Challenges 2026',
-    source: 'UN Global Pulse',
-    link: 'https://www.unglobalpulse.org/ai-challenges',
-    deadline: 'Application window typically closes April 2026 • Project-specific submission criteria apply per challenge track',
-    eligibility: 'AI researchers, technology startups, and social impact innovators globally • Multidisciplinary teams strongly encouraged • Any nationality, any country of residence',
-    benefits: 'UN international showcase platforms and global visibility • Policy brief co-authorship with UN Global Pulse innovation labs • Direct mentorship from senior UN data scientists and humanitarian experts • International recognition at UN events',
-    location: 'Online (Global)',
-    amount: 'Recognition + mentorship (non-monetary)',
-    degree_level: 'All Levels',
-    country_focus: 'Global',
-    application_steps: [
-      '1. Visit https://www.unglobalpulse.org/ai-challenges to view active challenge tracks.',
-      '2. Select a challenge track (e.g., predictive analytics for disaster response, AI for public health, ethical governance).',
-      '3. Form your multidisciplinary team — mixing data scientists, domain experts, and social scientists is encouraged.',
-      '4. Submit your initial application/concept note before the April 2026 deadline.',
-      '5. Shortlisted teams receive guidance from UN Global Pulse mentors to develop their solution.',
-      '6. Final solutions are presented on UN international platforms and evaluated by UN experts.',
-      '7. Winning teams co-author policy briefs with UN Global Pulse and receive international recognition.'
-    ],
-    snippet: 'UN Global Pulse is the United Nations\' flagship innovation initiative for big data and AI in humanitarian and development contexts. The AI Innovation Challenges task global teams with applying machine learning to predictive analytics for disaster response, public policy modeling, AI for health systems, and ethical humanitarian governance. Selected teams receive direct mentorship from UN data scientists, co-author policy briefs with UN innovation labs, and are featured on international UN platforms. Multidisciplinary teams combining AI, public health, economics, and social science are particularly competitive. Applications typically close April 2026.',
-  },
-
-  // ── 15. CODE FOR AFRICA "AI FOR GOOD" FELLOWSHIP ─────────────────────────
-  {
-    tag: 'data_science',
-    category: 'scholarship',
-    title: 'Code for Africa "AI for Good" Fellowship 2026',
-    source: 'Code for Africa',
-    link: 'https://codeforafrica.org/fellowships',
-    deadline: 'Recurrent annual calls — 4-month program with rolling cohort recruitment • Check portal for current application window',
-    eligibility: 'African technologists, data journalists, software engineers, and computational researchers • Passion for civic technology, responsible AI, automated fact-checking, and algorithmic accountability • Open to all African nationalities',
-    benefits: '$500/month stipend throughout the 4-month program tenure • Deployment of public-facing civic technology tools reaching real communities • Publication across pan-African media networks (AfricaCheck, OCCRP, local newsrooms) • Dedicated technical support team • Regional technology conference presentations',
-    location: 'Pan-Africa — Remote with hub-based presence in Nairobi, Lagos, Cape Town, Dakar',
-    amount: '$500/month stipend',
-    degree_level: 'All Levels',
-    country_focus: 'Africa',
-    application_steps: [
-      '1. Visit https://codeforafrica.org/fellowships to view the current fellowship call.',
-      '2. Review the current focus areas — typically responsible AI, multilingual NLP, civic fact-checking, or digital rights tools.',
-      '3. Prepare your application: portfolio of past civic/technical work, motivation letter, proposed project.',
-      '4. Submit your application online by the stated cohort deadline.',
-      '5. Shortlisted candidates may be interviewed by Code for Africa team members.',
-      '6. Accepted fellows receive $500/month stipend and are embedded in the Code for Africa digital newsroom ecosystem.',
-      '7. Over 4 months, design, build, and deploy a public-facing civic tech tool with technical support and mentorship.'
-    ],
-    snippet: 'Code for Africa is the continent\'s largest civic technology initiative, operating in 21 African countries with a network of newsrooms, data labs, and digital rights advocates. The AI for Good Fellowship is a 4-month paid program embedding African technologists in Code for Africa\'s digital newsrooms and civic tech labs to co-design responsible AI tools — including natural language processing systems for low-resource African languages, automated fact-checking pipelines, and algorithmic accountability frameworks for civil society and human rights defenders. Fellows receive a $500/month stipend, technical support, and publish their work across pan-African media networks.',
-  },
-
-  // ── 16. MULTILINGUAL AI FOR HEALTH CHALLENGE (ZINDI / HASH) ─────────────
-  {
-    tag: 'data_science',
-    category: 'competition',
-    title: 'Multilingual AI for Health Challenge (Zindi / HASH) 2026',
-    source: 'Zindi Africa / Hacks/Hackers Africa (HASH)',
-    link: 'https://zindi.africa/competitions/multilingual-ai-health-challenge',
-    deadline: 'Challenge launch window: July 2026 • Fully virtual • Open to global participants',
-    eligibility: 'AI developers, NLP researchers, linguists, and ML practitioners globally • Focus on low-resource African language modeling: Akan, Kiswahili, Luganda, Amharic • Individual or team participation allowed',
-    benefits: '$5,000 USD total prize pool • 5,000 Zindi points boosting public leaderboard ranking • Direct recognition within global healthcare AI networks • Open-source contribution portfolio building',
-    location: 'Online (Global)',
-    amount: '$5,000 USD prize pool',
-    degree_level: 'All Levels',
-    country_focus: 'Africa / Global',
-    application_steps: [
-      '1. Register a free account at https://zindi.africa if you do not already have one.',
-      '2. Navigate to the Multilingual AI for Health Challenge page when it launches in July 2026.',
-      '3. Review the challenge brief: building Multilingual Question Answering systems for African healthcare contexts.',
-      '4. Download the provided training datasets covering Akan, Kiswahili, Luganda, and Amharic medical dialogues.',
-      '5. Fine-tune Large Language Models (LLMs) or build custom NLP pipelines for medical question-answering.',
-      '6. Submit your model predictions through the Zindi platform and track your leaderboard ranking.',
-      '7. Top-ranked teams at competition close share the $5,000 prize pool and Zindi point rewards.'
-    ],
-    snippet: 'The Multilingual AI for Health Challenge tasks participants with building AI-powered Multilingual Question Answering systems fine-tuned on low-resource African languages — Akan, Kiswahili, Luganda, and Amharic — in medical NLP contexts. Hosted on Zindi in partnership with Hacks/Hackers Africa (HASH), the challenge directly addresses the critical gap in AI-driven medical communication for underserved African language speakers. The $5,000 prize pool and 5,000 Zindi ranking points provide tangible career recognition. Launches July 2026. Open globally — no geographic restrictions.',
-  },
-
-  // ── 17. AI FOR REPRODUCTIVE HEALTH INNOVATION CHALLENGE ──────────────────
-  {
-    tag: 'medicine',
-    category: 'competition',
-    title: 'AI for Reproductive Health Innovation Challenge 2026 (Sub-Saharan Africa)',
-    source: 'Reproductive Health Network Africa',
-    link: 'https://rhna.africa/ai-challenge',
-    deadline: 'Annual selection deadlines occur in Q2 each year • Four-week virtual innovation sprint format',
-    eligibility: 'Multidisciplinary teams across Sub-Saharan Africa • Ideal team composition: data scientists, software engineers, nurses, clinicians, and public health experts • Individuals or teams of up to 5 members',
-    benefits: 'Virtual pitch to a panel of global reproductive health experts and funders • Conference presentation slots at major regional health summits (e.g., APHA, African Public Health Alliance) • Seed funding for scaling winning prototypes • Technical mentorship throughout the innovation sprint',
-    location: 'Online / Virtual (Sub-Saharan Africa focus)',
-    amount: 'Seed funding for winners',
-    degree_level: 'All Levels',
-    country_focus: 'Africa',
-    application_steps: [
-      '1. Visit https://rhna.africa/ai-challenge and register your team before the Q2 2026 deadline.',
-      '2. Form a multidisciplinary team — combining data scientists, clinical staff, and software engineers strengthens your application.',
-      '3. Develop a project concept addressing a specific sexual and reproductive health challenge using AI (e.g., maternal mortality prediction, family planning chatbots, diagnostic tools).',
-      '4. Submit your initial project concept to the challenge portal.',
-      '5. Accepted teams enter the four-week virtual innovation sprint with access to real-world reproductive health datasets.',
-      '6. Co-design, prototype, and test your AI model under technical and clinical mentorship.',
-      '7. Present your working prototype in a virtual pitch to global health experts and funders.'
-    ],
-    snippet: 'This four-week virtual innovation sprint challenges multidisciplinary African teams to co-design, prototype, and test AI models using real-world sexual and reproductive health datasets. The challenge explicitly requires cross-functional teams — combining data scientists, software engineers, nurses, clinicians, and public health experts — to ensure solutions are both technically rigorous and clinically applicable. Winning teams pitch to global health experts and philanthropic funders, present at major regional health summits, and receive seed funding to scale their healthcare technology solutions.',
-  },
-
-  // ── 18. WELLCOME TRUST AI & DIGITAL HEALTH GRANTS ────────────────────────
-  {
-    tag: 'research',
-    category: 'grant',
-    title: 'Wellcome Trust AI & Digital Health Research Grants 2026',
-    source: 'Wellcome Trust',
-    link: 'https://wellcome.org/grant-funding/schemes/digital-health',
-    deadline: 'Active funding round deadline: April–May 2026 (varies by scheme) • Multi-year grants available',
-    eligibility: 'Academic researchers, clinical institutions, and digital health technology innovators globally • Strong research proposal and institutional backing preferred • Priority given to research in Low- and Middle-Income Countries (LMICs) including Sub-Saharan Africa',
-    benefits: 'Multi-million dollar research grant instruments (up to £500,000–£2M+ per award) • Support for major medical journal publications • Global healthcare policy integration pathways via Wellcome\'s international networks • Multi-year institutional research funding (3–5 year grants)',
-    location: 'Global (priority on LMICs and Africa)',
-    amount: 'Up to £500,000–£2M+ per award',
-    degree_level: 'PhD / Postdoc',
-    country_focus: 'Global',
-    application_steps: [
-      '1. Visit https://wellcome.org/grant-funding/schemes/digital-health to identify the most relevant funding scheme.',
-      '2. Review scheme-specific eligibility and scope (e.g., Discovery Research, Health Inequalities, AI for Clinical Diagnostics).',
-      '3. Contact your institution\'s research grants office — institutional endorsement is typically required.',
-      '4. Develop your research proposal: scientific rationale, methodology, ethical framework, and budget justification.',
-      '5. Register on Wellcome\'s grant management platform (Wellcome Grants) and submit your expression of interest or full application.',
-      '6. Shortlisted applications undergo peer review by Wellcome\'s expert committees.',
-      '7. Successful applicants receive multi-year funding, Wellcome network access, and publication support.'
-    ],
-    snippet: 'Wellcome Trust is one of the world\'s largest independent health research funders, with an endowment of over £30 billion. The Wellcome AI & Digital Health Grants fund pioneering research in clinical AI diagnostics, digital epidemiology, health system automation, and ethical health data management. Grants range from seed awards to multi-year institutional instruments of £500,000–£2M+. Wellcome actively prioritizes research with direct applicability in Low- and Middle-Income Countries, including Sub-Saharan Africa. Funded researchers benefit from Wellcome\'s global policy integration networks and major medical journal publication pipelines. Applications open April–May 2026.',
-  },
-
-  // ── 19. AIMS AI FOR SCIENCE SCHOLARSHIP PROGRAMME ────────────────────────
-  {
-    tag: 'data_science',
-    category: 'scholarship',
-    title: 'AIMS AI for Science Scholarship Programme 2026',
-    source: 'African Institute for Mathematical Sciences (AIMS)',
-    link: 'https://aims.ac.za/ai-for-science',
-    deadline: 'Application deadline: April 2026 (varies by regional AIMS centre) • Annual cohort intake',
-    eligibility: 'STEM graduates across Africa applying computational tools to biological, health, and environmental challenges • Bachelor\'s degree in science, mathematics, or engineering required • All African nationalities welcome',
-    benefits: 'Fully funded scholarships covering tuition and living stipend • Graduate thesis defense before international scientific faculty • Scientific paper publication support in peer-reviewed journals • Participation in international scientific symposia and conferences',
-    location: 'AIMS Centres across Africa — Cameroon, Ghana, Rwanda, Senegal, South Africa, Tanzania',
-    amount: 'Fully Funded (tuition + living stipend)',
-    degree_level: 'Master\'s',
-    country_focus: 'Africa',
-    application_steps: [
-      '1. Visit https://aims.ac.za/ai-for-science and identify the regional AIMS centre accepting applications.',
-      '2. Confirm your eligibility: STEM Bachelor\'s degree, African nationality, interest in computational science.',
-      '3. Prepare your application: academic transcripts, CV, two academic references, statement of purpose.',
-      '4. Submit your application to your chosen AIMS centre before April 2026.',
-      '5. Shortlisted candidates may be invited for a virtual interview or technical assessment.',
-      '6. Admitted scholars receive fully funded scholarships covering tuition and living costs.',
-      '7. Complete thesis research applying AI/ML to biological, health, or environmental science and defend before international faculty.'
-    ],
-    snippet: 'The AIMS AI for Science Scholarship Programme trains African STEM graduates to apply machine learning and computational methods to frontier science problems in biology, health, climate, and environmental science. Delivered across six AIMS centres — Cameroon, Ghana, Rwanda, Senegal, South Africa, and Tanzania — the program offers fully funded scholarships covering tuition and living costs. Graduates defend theses before panels of international scientists and publish research in peer-reviewed journals. Part of the broader AIMS ecosystem supported by Google, Mastercard Foundation, and the Gates Foundation. Applications close April 2026.',
-  },
-
-  // ── 20. HANGA SRH INNOVATION PROGRAM ─────────────────────────────────────
-  {
-    tag: 'medicine',
-    category: 'grant',
-    title: 'Hanga SRH Innovation Program — Youth Health Tech Accelerator',
-    source: 'Hanga Accelerator',
-    link: 'https://hangasrh.org',
-    deadline: 'Recurrent cohort calls — check https://hangasrh.org for current cycle opening',
-    eligibility: 'Youth-led technology startups and multidisciplinary teams operating in Sub-Saharan Africa • Focus on sexual and reproductive health (SRH) technology: mobile health platforms, clinical referral systems, health education apps • Founders of any age; teams of 1–5',
-    benefits: 'Non-dilutive equity-free seed funding • Technical incubator support throughout the program • Direct pitching to venture capital, philanthropic funds, and government health ministry partners • Government health ministry partnership facilitation in East and West Africa',
-    location: 'Sub-Saharan Africa — East & West Africa hubs (Rwanda, Kenya, Nigeria, Ghana)',
-    amount: 'Non-equity seed funding',
-    degree_level: 'All Levels',
-    country_focus: 'Africa',
-    application_steps: [
-      '1. Visit https://hangasrh.org and check the current cohort application window.',
-      '2. Confirm your venture addresses sexual and reproductive health (SRH) through technology: apps, platforms, clinical tools.',
-      '3. Prepare your application: team background, problem statement, technology description, existing traction/users, funding needs.',
-      '4. Submit the online application form.',
-      '5. Shortlisted teams are invited to a virtual pitch interview.',
-      '6. Accepted ventures enter the accelerator program with technical incubation support and mentorship.',
-      '7. Pitch your solution to venture capital, philanthropic funds, and government health ministry partners at program completion.'
-    ],
-    snippet: 'Hanga SRH accelerates youth-led technology startups building software for sexual and reproductive health education, clinical referral systems, and mobile health platforms across Sub-Saharan Africa. Selected ventures receive non-equity equity-free seed funding, technical incubation, and the rare opportunity to pitch directly to venture capital, philanthropic funds, and government health ministry partners in East and West Africa. The program deliberately includes government health ministries as partners — creating direct pathways to scale. Recurrent annual cohort calls — check the portal for the current application window.',
-  },
-
-  // ── 21. LEON LEVY SCHOLARSHIPS IN NEUROSCIENCE (NYAS) ────────────────────
-  {
-    tag: 'research',
-    category: 'scholarship',
-    title: 'Leon Levy Scholarships in Neuroscience (NYAS) — 2027 Cohort',
-    source: 'New York Academy of Sciences',
-    link: 'https://www.nyas.org/programs/leon-levy-scholars',
-    deadline: 'Applications open: August 21, 2026 • Applications close: October 16, 2026 • Tenure: September 1, 2027 – August 31, 2030',
-    eligibility: 'Postdoctoral researchers based in New York City boroughs (Manhattan, Brooklyn, Queens, Bronx, Staten Island) • 3 years or fewer of cumulative postdoctoral experience post-PhD at time of application • Open to US citizens, permanent residents, J-1 visa holders, and H-1B visa holders',
-    benefits: 'Three-year research tenure (September 2027 – August 2030) • Annual presentation at the prestigious NYAS Leon Levy Neuroscience Symposium • Structured Principal Investigator (PI) career transition support • Lifelong access to the NYAS elite scientific network • Competitive research stipend',
-    location: 'New York City, USA (postdoc institution in NYC boroughs required)',
-    amount: 'Competitive research stipend (3-year tenure)',
-    degree_level: 'PhD / Postdoc',
-    country_focus: 'Global (NYC residency required)',
-    application_steps: [
-      '1. Applications open August 21, 2026 at https://www.nyas.org/programs/leon-levy-scholars.',
-      '2. Confirm eligibility: postdoctoral position at an NYC institution, PhD awarded, ≤3 years cumulative postdoc experience.',
-      '3. Confirm visa eligibility: US citizens, permanent residents, J-1 visa, or H-1B visa holders are eligible.',
-      '4. Prepare application materials: research proposal, CV, publication record, two letters of recommendation from your PI.',
-      '5. Choose your neuroscience sub-discipline: Cellular, Systems, Cognitive, Computational, or Translational Neuroscience.',
-      '6. Submit your complete application by October 16, 2026.',
-      '7. Admitted scholars begin the three-year tenure in September 2027 with full NYAS network access and symposium presentations.'
-    ],
-    snippet: 'The Leon Levy Scholarships in Neuroscience are among the most prestigious postdoctoral neuroscience fellowships in the United States. Administered by the New York Academy of Sciences and funded by the Leon Levy Foundation, the program supports early-career postdoctoral neuroscientists based at NYC institutions across five sub-disciplines: Cellular, Systems, Cognitive, Computational, and Translational Neuroscience. Applications open August 21, 2026 and close October 16, 2026, with the three-year tenure running September 2027 to August 2030. Eligible visa types include J-1 and H-1B in addition to US citizens and permanent residents.',
-  },
-
-  // ── 22. CAMBRIDGE ERA:AI FELLOWSHIP ──────────────────────────────────────
-  {
-    tag: 'data_science',
-    category: 'scholarship',
-    title: 'Cambridge ERA:AI Fellowship — Winter 2027 Cohort',
-    source: 'Effective Research Alliance / University of Cambridge',
-    link: 'https://www.era-ai.org/fellowship',
-    deadline: 'Winter 2027 cohort application deadline: September 13, 2026',
-    eligibility: 'Mid-career researchers, computer scientists, and policy professionals globally • Focus areas: technical AI safety, frontier AI governance, AI hardware/compute verification, interpretability • Global applications welcome — no work authorization restrictions • No strict PhD requirement if equivalent research experience is demonstrated',
-    benefits: '10-week fully funded residential fellowship in Cambridge, UK • Covers stipend, travel to Cambridge, lodging, and visa support if needed • £10,000 research stipend • Co-authoring of academic working papers • Presentations to UK, EU, and international AI safety institutes and government policy bodies',
-    location: 'University of Cambridge, Cambridge, UK (fully residential)',
-    amount: '£10,000 stipend + fully funded',
-    degree_level: 'PhD / Postdoc / All Levels',
-    country_focus: 'Global',
-    application_steps: [
-      '1. Visit https://www.era-ai.org/fellowship and review the Winter 2027 cohort brief and focus areas.',
-      '2. Confirm your research background aligns with: technical AI safety, frontier model governance, hardware/compute verification, or AI interpretability.',
-      '3. Prepare your application: CV, research statement (2–3 pages describing your work and how it relates to AI safety), writing samples or papers.',
-      '4. Obtain 1–2 letters of recommendation from academic or professional supervisors.',
-      '5. Submit your complete application by September 13, 2026.',
-      '6. Shortlisted candidates are invited to a virtual interview with the ERA:AI fellowship selection committee.',
-      '7. Successful fellows receive fully funded travel, Cambridge lodging, and a £10,000 stipend for the 10-week residency.'
-    ],
-    snippet: 'The Cambridge ERA:AI Fellowship is a 10-week fully funded residential research fellowship at the University of Cambridge targeting researchers working on the most critical AI safety challenges: technical alignment, frontier AI governance, hardware/compute verification, and interpretability. The Winter 2027 cohort application deadline is September 13, 2026. Fellows receive a £10,000 stipend plus fully covered travel, Cambridge accommodation, and visa support. Open globally — no work authorization restrictions. Outputs include co-authored academic working papers and presentations to UK, EU, and international AI safety institutes and government policy bodies.',
-  },
-
-  // ── 23. LIVES DOCTORAL PROGRAMME & BAVARIA SCHOLARSHIPS ──────────────────
-  {
-    tag: 'research',
-    category: 'scholarship',
-    title: 'LIVES Doctoral Programme & Bavaria Scholarships 2026–2029',
-    source: 'LIVES Centre (Swiss National Centre of Competence in Research) / Free State of Bavaria',
-    link: 'https://www.lives-nccr.ch/doctoral-programme',
-    deadline: 'Multi-year grant cycles covering 2026–2029 • Applications reviewed annually — check the LIVES portal for current intake deadline',
-    eligibility: 'Early-stage researchers and doctoral candidates seeking European academic research placements • Focus on life course research, interdisciplinary social sciences, quantitative methodologies, and public health data analysis • International applications considered',
-    benefits: 'Structured European doctoral dissertation support through 2029 • Publication in peer-reviewed European social science journals • International conference presentation funding • Multi-year grant support through the LIVES NCCR framework',
-    location: 'Switzerland (Lausanne, Geneva) / Germany (Bavaria) — European placements',
-    amount: 'Multi-year doctoral grant',
-    degree_level: 'PhD / Postdoc',
-    country_focus: 'Global',
-    application_steps: [
-      '1. Visit https://www.lives-nccr.ch/doctoral-programme for current application requirements and intake dates.',
-      '2. Identify a LIVES-affiliated research unit and supervisor whose work aligns with your interests in life course research or social sciences.',
-      '3. Prepare your application: research proposal, academic CV, transcripts, and two reference letters.',
-      '4. Contact potential supervisors at LIVES partner institutions in Lausanne, Geneva, or Bern before formal submission.',
-      '5. Submit your formal application to the LIVES doctoral programme office.',
-      '6. Successful candidates are admitted to a structured multi-year doctoral programme with European academic placement.',
-      '7. Complete dissertation research, publish in peer-reviewed journals, and present at international conferences.'
-    ],
-    snippet: 'The LIVES Doctoral Programme is part of Switzerland\'s National Centre of Competence in Research on the Overcoming Vulnerability: Life Course Perspectives (LIVES NCCR). It provides structured multi-year doctoral funding for researchers studying life course trajectories, social inequalities, quantitative social science methodologies, and public health. Bavaria Scholarships complement this with parallel European funding channels for doctoral candidates at German-Swiss academic institutions. The programme supports dissertation completion, peer-reviewed publication, and international conference participation through 2029. Applications are reviewed annually.',
-  },
-
-  // ── 24. UBC FOUR-YEAR DOCTORAL FELLOWSHIP / MASTERCARD SCHOLARS ───────────
-  {
-    tag: 'research',
-    category: 'scholarship',
-    title: 'UBC Four-Year Doctoral Fellowship (4YF) / Mastercard Foundation Scholars 2026',
-    source: 'University of British Columbia',
-    link: 'https://www.grad.ubc.ca/awards/four-year-doctoral-fellowship',
-    deadline: 'Applications open Q3 annually for the following academic year entry • Check UBC Graduate Studies portal for current cycle',
-    eligibility: 'Exceptional international doctoral students admitted to or enrolled at UBC • Targeted tracks for African scholars through the Mastercard Foundation Scholars Program at UBC • Strong research proposal and academic excellence required',
-    benefits: 'Full tuition coverage for four years • Annual living stipend throughout the doctoral tenure • Doctoral dissertation publication support • Academic conference presentation funding • University teaching portfolio development • Access to UBC\'s world-class research facilities',
-    location: 'University of British Columbia, Vancouver, British Columbia, Canada',
-    amount: 'Full tuition + annual stipend (4 years)',
-    degree_level: 'PhD / Postdoc',
-    country_focus: 'Global (Africa priority track)',
-    application_steps: [
-      '1. Apply for doctoral admission to your chosen UBC department at https://www.grad.ubc.ca.',
-      '2. In your application, indicate interest in the Four-Year Doctoral Fellowship (4YF) — it is automatically considered for all admitted doctoral students.',
-      '3. African applicants should additionally apply to the Mastercard Foundation Scholars Program at UBC for the dedicated Africa track.',
-      '4. Visit https://mastercardfdn.org/scholars for the Mastercard Foundation Scholars application portal.',
-      '5. Prepare your research proposal, academic CV, transcripts, and reference letters for both applications.',
-      '6. Submit before the Q3 deadline for entry in the following academic year.',
-      '7. Admitted fellows receive four years of full tuition coverage, annual stipend, and full UBC academic support.'
-    ],
-    snippet: 'The UBC Four-Year Doctoral Fellowship (4YF) provides exceptional doctoral students at the University of British Columbia with four years of full tuition funding and an annual living stipend. African scholars benefit from a dedicated Mastercard Foundation Scholars Program track at UBC — creating a powerful pipeline for African researchers to pursue doctoral education at one of Canada\'s top-ranked universities. Fellows develop original scientific research, gain undergraduate teaching experience, and present dissertations and papers at international academic conferences. Applications open Q3 each year for the following academic year.',
-  },
-
-  // ── 25. ANTHROPIC FELLOWS PROGRAM ────────────────────────────────────────
-  {
-    tag: 'data_science',
-    category: 'scholarship',
-    title: 'Anthropic Fellows Program 2026 — AI Safety Research (Work Authorization Required)',
-    source: 'Anthropic',
-    link: 'https://www.anthropic.com/fellows',
-    deadline: 'Four-month cohorts starting May/July 2026 • Rolling applications — check portal for current cohort deadline',
-    eligibility: '⚠️ STRICTLY REQUIRES existing work authorization in the US, UK, or Canada — Anthropic does NOT provide visa sponsorship under any circumstances • Technical researchers with AI safety, interpretability, or ML background • No formal degree required if equivalent research skills are demonstrated • Candidates from Africa, Asia, South America without Western work authorization are NOT eligible',
-    benefits: '$3,850/week stipend ($61,600 per 4-month cohort) • Direct research collaboration and co-authorship with Anthropic scientists • Access to Anthropic\'s frontier AI computational cluster • Publication in leading AI safety venues (NeurIPS, ICML, ICLR, Alignment Forum)',
-    location: 'San Francisco, USA / London, UK / Remote within work-authorized jurisdictions only',
-    amount: '$3,850/week ($61,600 per cohort)',
-    degree_level: 'PhD / Postdoc / All Levels',
-    country_focus: 'Global (US/UK/Canada work authorization required)',
-    application_steps: [
-      '⚠️ STOP: Confirm you already hold valid work authorization (visa, citizenship, permanent residence) in the US, UK, or Canada before proceeding. Anthropic does not sponsor visas.',
-      '1. Visit https://www.anthropic.com/fellows and review the current cohort requirements and focus areas.',
-      '2. Identify your proposed research area: mechanistic interpretability, RLHF, AI alignment theory, threat modeling, or frontier model safety.',
-      '3. Prepare your application: CV, research statement, links to prior publications or open-source safety research.',
-      '4. Submit your application via the Anthropic Fellows portal before the cohort deadline.',
-      '5. Shortlisted candidates are invited for technical interviews with Anthropic researchers.',
-      '6. Accepted fellows receive $3,850/week and are embedded with Anthropic research teams for 4 months.',
-      '7. NOTE for African/international candidates without Western work authorization: consider Zindi, AIMS AMMI, or Code for Africa fellowships as accessible alternatives.'
-    ],
-    snippet: 'The Anthropic Fellows Program offers four-month research residencies in AI safety — covering mechanistic interpretability, reinforcement learning from human feedback (RLHF), alignment theory, and frontier model threat modeling. Fellows receive a $3,850/week stipend ($61,600 total), co-author research with Anthropic scientists, and access cutting-edge computational clusters. CRITICAL WARNING: This program strictly and unconditionally requires existing work authorization in the US, UK, or Canada. Anthropic does not provide visa sponsorship under any circumstances. African and international candidates without Western work authorization should instead explore borderless alternatives such as Zindi AI competitions, the AIMS AMMI fully funded Master\'s, or the Code for Africa AI for Good Fellowship.',
-  },
 ];
 
 function extractAmount(s) {
@@ -825,7 +823,9 @@ function extractCountryFocus(s) {
 }
 
 function getApplicationSteps(o) {
-  if (o.application_steps) return o.application_steps;
+  if (o.application_steps && Array.isArray(o.application_steps) && o.application_steps.length > 0) {
+    return o.application_steps;
+  }
   const steps = [
     `1. Visit the official opportunity portal at ${o.source || 'source website'}.`,
     `2. Check detailed eligibility: ${o.eligibility || 'Open to all eligible candidates'}.`,
@@ -846,11 +846,11 @@ export async function seedOpportunities() {
 
   const now = new Date().toISOString();
   // Set cache far in the future so it always serves (12h TTL from now)
-  const cacheTime = new Date(Date.now() - 1000).toISOString(); // 1 second ago = within TTL
+  const cacheTime = new Date(Date.now() - 1000).toISOString();
 
   for (const [tag, opps] of Object.entries(byTag)) {
     const processed = opps.map((o, idx) => ({
-      id: `static-${tag}-${idx}`,
+      id: o.featured ? `featured-${o.featured_rank}` : `static-${tag}-${idx}`,
       title: o.title,
       link: o.link,
       snippet: o.snippet,
@@ -866,6 +866,9 @@ export async function seedOpportunities() {
       degree_level: o.degree_level || extractDegreeLevel(o.title + ' ' + o.snippet),
       country_focus: o.country_focus || extractCountryFocus(o.title + ' ' + o.snippet),
       application_steps: getApplicationSteps(o),
+      application_checklist: getApplicationSteps(o),
+      featured: o.featured || false,
+      featured_rank: o.featured_rank || null,
       verified: true,
     }));
 

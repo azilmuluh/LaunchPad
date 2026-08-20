@@ -228,6 +228,12 @@ export default function OpportunityCard({ item, isBookmarked, onBookmark, user }
           {/* Row 1: badge + bookmark */}
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 flex-wrap">
+              {item.featured && (
+                <span className="nb-badge flex items-center gap-1.5 font-black" style={{ color: '#B45309', borderColor: '#F59E0B', background: '#FEF3C7' }}>
+                  <Sparkles size={12} className="text-amber-500 fill-amber-500" />
+                  {item.featured_rank ? `Top #${item.featured_rank}` : 'Top 25'}
+                </span>
+              )}
               <span className="nb-badge flex items-center gap-1.5" style={{ color: cfg.color, borderColor: cfg.color, background: cfg.bg }}>
                 {cfg.icon} {t(item.category || 'opportunity')}
               </span>
