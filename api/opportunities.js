@@ -298,7 +298,7 @@ export default async function handler(req, res) {
 
     const forceRefresh = refresh === '1' || refresh === 'true';
     const pageNum  = parseInt(page) || 1;
-    const pageSize = 12;
+    const pageSize = parseInt(req.query.limit) || 25;
 
     const effectiveLocationMode = location_mode || userSettings.location_mode || 'all';
     const effectiveUserLocation = user_location || userSettings.user_location || user.location || user.region || '';
@@ -406,10 +406,13 @@ export default async function handler(req, res) {
     }
 
     // ── Age & education filters ────────────────────────────────────────────────
-    const userAge = user.age || 0;
+    const userAge = parseInt(user.age) || 0;
     const userEd  = (user.education_level || '').toLowerCase();
     
     const filtered = allOpps.filter(op => {
+      // Always include top 25 curated featured opportunities
+      if (op.featured) return true;
+
       const text = ((op.title||'') + ' ' + (op.snippet||'') + ' ' + (op.eligibility||'')).toLowerCase();
       
       if (userAge > 0) {

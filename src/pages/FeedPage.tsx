@@ -94,8 +94,12 @@ export default function FeedPage({ user }: any) {
       });
       const res  = await apiRequest(`/api/opportunities?${params}`);
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to load');
-      setDiscoverItems(prev => (reset || p === 1) ? (data.items || []) : [...prev, ...(data.items || [])]);
+      setDiscoverItems(prev => {
+        if (reset || p === 1) return data.items || [];
+        const seen = new Set(prev.map((it: any) => it.id || it.link || it.title));
+        const newItems = (data.items || []).filter((it: any) => !seen.has(it.id || it.link || it.title));
+        return [...prev, ...newItems];
+      });
       setDiscoverHasMore(!!data.hasMore);
       setDiscoverPage(p);
     } catch (e: any) {
@@ -115,13 +119,18 @@ export default function FeedPage({ user }: any) {
       const params = new URLSearchParams({
         page: String(p),
         category: c,
-        limit: '12',
+        limit: '25',
         ...(sq ? { search: sq } : {}),
       });
       const res  = await apiRequest(`/api/verified-opps?${params}`);
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed');
-      setCommunityItems(prev => (reset || p === 1) ? (data.items || []) : [...prev, ...(data.items || [])]);
+      setCommunityItems(prev => {
+        if (reset || p === 1) return data.items || [];
+        const seen = new Set(prev.map((it: any) => it.id || it.link || it.title));
+        const newItems = (data.items || []).filter((it: any) => !seen.has(it.id || it.link || it.title));
+        return [...prev, ...newItems];
+      });
       setCommunityHasMore(!!data.hasMore);
       setCommunityPage(p);
     } catch (e: any) {
@@ -173,8 +182,9 @@ export default function FeedPage({ user }: any) {
     paramsRef.current = { cat, debouncedSearch, refreshNonce, locationMode, userLocation };
   }, [cat, debouncedSearch, refreshNonce, locationMode, userLocation]);
 
-  // Stable discover sentinel — reads from refs, never stale
+  // Stable discover sentinel — re-attaches as soon as skeleton unmounts and sentinel mounts
   useEffect(() => {
+    if (tab !== 'discover' || discoverLoading) return;
     const el = dLoaderRef.current;
     if (!el) return;
     const obs = new IntersectionObserver(([entry]) => {
@@ -183,15 +193,14 @@ export default function FeedPage({ user }: any) {
       if (entry.isIntersecting && s.hasMore && !s.loadMore && !s.loading) {
         fetchDiscover(s.page + 1, p.cat, false, p.debouncedSearch, p.refreshNonce, p.locationMode, p.userLocation);
       }
-    }, { threshold: 0.1, rootMargin: '200px' });
+    }, { threshold: 0.1, rootMargin: '300px' });
     obs.observe(el);
     return () => obs.disconnect();
-  // Re-register only when tab changes (not on state updates — refs handle that)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tab]);
+  }, [tab, discoverLoading, discoverItems.length, fetchDiscover]);
 
   // Stable community sentinel
   useEffect(() => {
+    if (tab !== 'community' || communityLoading) return;
     const el = cLoaderRef.current;
     if (!el) return;
     const obs = new IntersectionObserver(([entry]) => {
@@ -200,11 +209,10 @@ export default function FeedPage({ user }: any) {
       if (entry.isIntersecting && s.hasMore && !s.loadMore && !s.loading) {
         fetchCommunity(s.page + 1, p.cat, false, p.debouncedSearch);
       }
-    }, { threshold: 0.1, rootMargin: '200px' });
+    }, { threshold: 0.1, rootMargin: '300px' });
     obs.observe(el);
     return () => obs.disconnect();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tab]);
+  }, [tab, communityLoading, communityItems.length, fetchCommunity]);
 
   // ── Bookmarks ────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -458,15 +466,37 @@ export default function FeedPage({ user }: any) {
             </div>
 
             {/* Infinite scroll sentinel */}
-            <div ref={tab === 'discover' ? dLoaderRef : cLoaderRef} className="py-10 flex justify-center">
+            <div ref={tab === 'discover' ? dLoaderRef : cLoaderRef} className="py-10 flex flex-col items-center justify-center gap-3">
               {isMore && (
-                <div className="flex items-center gap-3 text-sm" style={{ color: '#1e293b' }}>
-                  <div className="w-4 h-4 rounded-full border-2 border-orange-500 border-t-transparent animate-spin" />
+                <div className="flex items-center gap-3 text-sm font-bold" style={{ color: '#1e293b' }}>
+                  <div className="w-5 h-5 rounded-full border-2 border-orange-500 border-t-transparent animate-spin" />
                   {t('loading_more')}
                 </div>
               )}
+              {hasMore && !isMore && (
+                <button
+                  onClick={() => {
+                    if (tab === 'discover') {
+                      const s = discoverStateRef.current;
+                      const p = paramsRef.current;
+                      if (s.hasMore && !s.loadMore && !s.loading) {
+                        fetchDiscover(s.page + 1, p.cat, false, p.debouncedSearch, p.refreshNonce, p.locationMode, p.userLocation);
+                      }
+                    } else {
+                      const s = communityStateRef.current;
+                      const p = paramsRef.current;
+                      if (s.hasMore && !s.loadMore && !s.loading) {
+                        fetchCommunity(s.page + 1, p.cat, false, p.debouncedSearch);
+                      }
+                    }
+                  }}
+                  className="nb-btn px-6 py-3 rounded-xl text-sm font-black flex items-center gap-2 shadow-sm transition-all hover:scale-105"
+                  style={{ background: '#FF5C00', color: '#fff' }}>
+                  <Sparkles size={16} /> Load More Opportunities
+                </button>
+              )}
               {!hasMore && items.length > 0 && (
-                <p className="text-xs" style={{ color: '#1e293b' }}>{t('all_loaded')}</p>
+                <p className="text-xs font-bold" style={{ color: '#64748b' }}>{t('all_loaded')}</p>
               )}
             </div>
           </>
