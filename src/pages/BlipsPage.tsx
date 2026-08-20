@@ -38,12 +38,18 @@ export default function BlipsPage({ user }: any) {
     try {
       const res = await apiRequest(`/api/blips?page=${pageNum}`);
       const data = await res.json();
+      // Support both old (array) and new ({ blips, hasMore }) response shapes
+      const items: any[] = Array.isArray(data) ? data : (data.blips || []);
+      const more: boolean = Array.isArray(data) ? items.length >= 5 : !!data.hasMore;
       if (refresh) {
-        setBlips(data);
+        setBlips(items);
       } else {
-        setBlips(prev => [...prev, ...data]);
+        setBlips(prev => {
+          const seen = new Set(prev.map((b: any) => b.embed_id || b.id));
+          return [...prev, ...items.filter((b: any) => !seen.has(b.embed_id || b.id))];
+        });
       }
-      if (data.length < 5) setHasMore(false);
+      setHasMore(more);
     } catch (e) {
       console.error(e);
     } finally {
@@ -125,9 +131,8 @@ export default function BlipsPage({ user }: any) {
       setActiveBlip(index);
       setCommentsOpen(false);
     }
-    
-    // Near bottom? Load more
-    if (scrollTop + clientHeight >= scrollHeight - clientHeight) {
+    // Load more when user is 1 full screen from the bottom
+    if (hasMore && !loadingMore && scrollTop + clientHeight >= scrollHeight - clientHeight * 1.5) {
       loadMore();
     }
   };
@@ -187,19 +192,51 @@ export default function BlipsPage({ user }: any) {
           <div key={`${blip.id}-${i}`} className="h-full w-full snap-start relative bg-neutral-900">
             {/* VIDEO LAYER */}
             <div className="absolute inset-0 flex items-center justify-center bg-black">
-              {blip.video_source === 'youtube' ? (
-                <iframe
-                  className="w-full h-full"
-                  src={`https://www.youtube.com/embed/${blip.embed_id}?autoplay=${i === activeBlip ? 1 : 0}&mute=${i === activeBlip ? 0 : 1}&loop=1&playlist=${blip.embed_id}&controls=0&modestbranding=1&rel=0&iv_load_policy=3&enablejsapi=1&origin=${window.location.origin}`}
-                  title={blip.title}
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  style={{ pointerEvents: 'auto', border: 'none' }}
-                />
-              ) : (
-                <div className="text-white text-xs opacity-50 font-black uppercase tracking-widest">
-                  {t('video_soon')} for {blip.video_source}
-                </div>
-              )}
+              {(() => {
+                const isYouTube = blip.video_source === 'youtube' || (blip.video_url && (blip.video_url.includes('youtube') || blip.video_url.includes('youtu.be')));
+                const cleanEmbedId = blip.embed_id ? blip.embed_id.replace(/^yt-/, '') : (blip.video_url ? (blip.video_url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|shorts\/|watch\?.+&v=))([\w-]{11})/) || [])[1] : null);
+
+                if (isYouTube && cleanEmbedId) {
+                  return (
+                    <iframe
+                      className="w-full h-full"
+                      src={`https://www.youtube-nocookie.com/embed/${cleanEmbedId}?autoplay=${i === activeBlip ? 1 : 0}&mute=0&controls=1&playsinline=1&rel=0&modestbranding=1`}
+                      title={blip.title}
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      allowFullScreen
+                      style={{ pointerEvents: 'auto', border: 'none' }}
+                    />
+                  );
+                } else if (blip.video_url && (blip.video_url.endsWith('.mp4') || blip.video_url.endsWith('.webm') || blip.video_source === 'direct')) {
+                  return (
+                    <video
+                      className="w-full h-full object-cover"
+                      src={blip.video_url}
+                      controls
+                      playsInline
+                      autoPlay={i === activeBlip}
+                      loop
+                    />
+                  );
+                } else {
+                  return (
+                    <div className="flex flex-col items-center justify-center gap-2 p-6 text-center">
+                      <Video size={36} className="text-orange-500 animate-pulse" />
+                      <p className="text-white text-xs font-black uppercase tracking-widest">{blip.title}</p>
+                      {blip.video_url && (
+                        <a
+                          href={blip.video_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="mt-2 px-4 py-1.5 bg-orange-600 hover:bg-orange-500 rounded-lg text-xs font-bold text-white flex items-center gap-1.5"
+                        >
+                          Watch Video <ArrowUpRight size={12} />
+                        </a>
+                      )}
+                    </div>
+                  );
+                }
+              })()}
             </div>
 
             {/* CONTEXT LAYER OVERLAY - Positioned higher to avoid navbar */}

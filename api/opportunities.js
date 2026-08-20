@@ -1,6 +1,6 @@
 import supabase from './_supabase.js';
 import jwt from 'jsonwebtoken';
-import { seedOpportunities } from './seed-opps.js';
+import { seedOpportunities, OPPORTUNITIES as SEED_OPPS } from './seed-opps.js';
 import {
   filterOpportunities,
   sortOpportunities,
@@ -199,16 +199,26 @@ async function fetchFromSearch(tag, educationLevel = '', age = 0, start = 0) {
 // ── Auto-ensure static seed exists ───────────────────────────────────────────
 async function ensureSeeded() {
   if (seeded) return;
+  seeded = true; // mark early to prevent concurrent calls
   try {
-    const { count } = await supabase.from('lp_tag_cache').select('id', { count: 'exact', head: true });
-    if (!count || count === 0) {
-      console.log('[Seed] Cache empty — seeding static library…');
-      await seedOpportunities();
-    }
+    // Always re-seed the critical tags so featured opps are always fresh
+    const { error } = await supabase
+      .from('lp_tag_cache')
+      .select('tag', { count: 'exact', head: true })
+      .in('tag', ['featured', 'general', 'all']);
+    // Run full seed in background (non-blocking) so it never delays the response
+    setImmediate(async () => {
+      try {
+        console.log('[Seed] Background re-seed of featured/all tags started…');
+        await seedOpportunities();
+        console.log('[Seed] Background re-seed complete.');
+      } catch (e) {
+        console.warn('[Seed] Background re-seed failed:', e.message);
+      }
+    });
   } catch (e) {
     console.warn('[Seed] ensureSeeded check failed:', e.message);
   }
-  seeded = true;
 }
 
 // ── Background live-search cache refresh (fire-and-forget, never blocks response) ──
@@ -405,7 +415,44 @@ export default async function handler(req, res) {
       triggerBackgroundRefresh(effectiveTags, user.education_level, user.age);
     }
 
-    // ── Age & education filters ────────────────────────────────────────────────
+    // ── Inject in-memory featured opps as guaranteed fallback ─────────────────
+    // (Covers the window between cold-start and background re-seed completing)
+    const inMemFeatured = SEED_OPPS
+      .filter(o => o.featured)
+      .map((o, idx) => ({
+        id: `featured-${o.featured_rank || idx + 1}`,
+        title: o.title,
+        link: o.link,
+        snippet: o.snippet,
+        description: o.snippet,
+        source: o.source,
+        tag: o.tag,
+        category: o.category,
+        deadline: o.deadline || null,
+        eligibility: o.eligibility || null,
+        benefits: o.benefits || null,
+        location: o.location || null,
+        amount: o.amount || null,
+        degree_level: o.degree_level || null,
+        country_focus: o.country_focus || null,
+        application_steps: Array.isArray(o.application_steps) ? o.application_steps : [],
+        application_checklist: Array.isArray(o.application_steps) ? o.application_steps : [],
+        featured: true,
+        featured_rank: o.featured_rank || idx + 1,
+        verified: true,
+        _score: 500,
+      }));
+
+    // Merge: prefer DB versions (may have richer data) but fill in any missing featured opps
+    const existingFeaturedIds = new Set(allOpps.filter(op => op.featured).map(op => op.id));
+    for (const feat of inMemFeatured) {
+      if (!existingFeaturedIds.has(feat.id)) {
+        allOpps.push(feat);
+        existingFeaturedIds.add(feat.id);
+      }
+    }
+
+
     const userAge = parseInt(user.age) || 0;
     const userEd  = (user.education_level || '').toLowerCase();
     
